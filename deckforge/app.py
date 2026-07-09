@@ -1943,6 +1943,11 @@ class DeckForgeHandler(SimpleHTTPRequestHandler):
             path = "/index.html"
         if path in {"/engine", "/deckforge-runtime", "/deckforge-runtime.js"}:
             path = "/app.js"
+        if path.startswith("/source-payloads/"):
+            payload_root = (ROOT.parent / "source-payloads").resolve()
+            candidate = (ROOT.parent / path.lstrip("/")).resolve()
+            if candidate == payload_root or payload_root in candidate.parents:
+                return str(candidate)
         return str((ROOT / path.lstrip("/")).resolve())
 
     def log_message(self, fmt: str, *args: object) -> None:
