@@ -36,6 +36,26 @@ The validation report confirms:
 - Arabic language tags
 - RTL editable HTML slides
 
+## Complete Source Payload
+
+The full JavaScript application source and Jordan-Argentina deck model are preserved in ordered, checksum-verified parts under `source-payloads/`. The repository's lightweight `deckforge/app.js` loader runs the application source directly; the included reconstruction scripts recreate the original single files when needed.
+
+## Binary Presentation Files
+
+The generated PowerPoint and editable slide ZIP are stored as checksum-verified Base64 parts under `binary-payloads/`. Rebuild both files with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\binary-payloads\rebuild-binaries.ps1
+```
+
+The reconstruction script writes both binaries to `examples/jordan-argentina/` and verifies their byte sizes and SHA-256 hashes.
+
+To recreate the original JavaScript and both binary deck files together, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\rebuild-full-package.ps1
+```
+
 ## Run Locally
 
 From the repository root:
