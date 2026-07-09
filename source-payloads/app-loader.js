@@ -1,4 +1,5 @@
 (async function loadDeckForgeSource() {
+  document.documentElement.dataset.deckforgeLoadState = "loading";
   const files = [
     "../source-payloads/app.js.part01.txt",
     "../source-payloads/app.js.part02.txt",
@@ -13,7 +14,9 @@
 
   const source = `${sourceParts.join("")}\n//# sourceURL=deckforge-app.bundle.js`;
   new Function(source)();
+  document.documentElement.dataset.deckforgeLoadState = "ready";
 })().catch((error) => {
   console.error("DeckForge failed to load", error);
-  document.body.dataset.deckforgeLoadError = "true";
+  document.documentElement.dataset.deckforgeLoadState = "error";
+  document.documentElement.dataset.deckforgeLoadError = error?.message || "Unknown load error";
 });
