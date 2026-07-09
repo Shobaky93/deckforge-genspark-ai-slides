@@ -67,7 +67,7 @@ python deckforge/app.py
 Then open:
 
 ```text
-http://127.0.0.1:8800
+http://127.0.0.1:8765
 ```
 
 ## Generate The Example Deck
