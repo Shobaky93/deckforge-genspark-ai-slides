@@ -9,7 +9,21 @@ if ($parts.Count -ne [int]$manifest.parts) {
     throw "Expected $($manifest.parts) deck JSON parts, found $($parts.Count)."
 }
 
-$source = ($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join ""
+$trimParts = @($manifest.trim_final_newline_parts)
+$sourceParts = for ($index = 0; $index -lt $parts.Count; $index++) {
+    $text = [IO.File]::ReadAllText($parts[$index].FullName)
+    $partNumber = $index + 1
+
+    if ($trimParts -contains $partNumber -and $text.EndsWith("`n")) {
+        $text = $text.Substring(0, $text.Length - 1)
+        if ($text.EndsWith("`r")) {
+            $text = $text.Substring(0, $text.Length - 1)
+        }
+    }
+
+    $text
+}
+$source = $sourceParts -join ""
 if ($source.Length -ne [int]$manifest.characters) {
     throw "Character-count verification failed for the deck JSON."
 }
