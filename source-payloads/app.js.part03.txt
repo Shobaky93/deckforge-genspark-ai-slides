@@ -1,0 +1,1747 @@
+    documents: deck.documents || [],
+    charts: deck.charts || [],
+    references: deck.references || [],
+    referenceAnalysis: deck.referenceAnalysis || referenceAnalysis || null,
+    deckDNA: deck.deckDNA || buildDeckDNA(deck),
+    briefing: deck.briefing || buildBriefing(deck),
+    sourceMap: deck.sourceMap || buildSourceMap(deck.sources || [], deck.evidence || []),
+    factCheck,
+    review: deck.review,
+    arabicAudit,
+    variants: deck.variants || [],
+    outline: deck.outline || outlineDraft || [],
+    storyboard: deck.storyboard || buildStoryboard(),
+    keywords: deck.keywords,
+    strategy: deck.strategy,
+    plan: deck.plan,
+    qa: deck.qa,
+    playlist: deck.playlist
+  };
+}
+
+function slideToHtml(slide) {
+  const hasRtl = slide.elements.some((element) => element.type === "text" && element.rtl);
+  const objects = slide.elements.map((element) => {
+    const common = `position:absolute; left:${element.x}px; top:${element.y}px; width:${element.w}px; height:${element.h}px;`;
+    if (element.type === "text") {
+      const family = fontStackForElement(element);
+      return `<div data-object="true" data-object-type="text" style="${common} color:${element.fill}; font-family:${family}; font-size:${element.size}px; font-weight:${element.bold ? 800 : 500}; line-height:${element.lineHeight || 1.1}; text-align:${element.align}; direction:${element.rtl ? "rtl" : "ltr"}; letter-spacing:0; white-space:pre-wrap; overflow:hidden;">${escapeHtml(element.text || "")}</div>`;
+    }
+    if (element.type === "image") {
+      return `<div data-object="true" data-object-type="image" style="${common} background:${element.fill || "#111111"}; border:1px solid ${element.stroke || "transparent"}; border-radius:${element.radius || 0}px; overflow:hidden;"><img src="${escapeHtml(element.src || "")}" alt="${escapeHtml(element.alt || "")}" style="width:100%;height:100%;object-fit:${escapeHtml(element.fit || "cover")};display:block;"></div>`;
+    }
+    return `<div data-object="true" data-object-type="${element.type}" style="${common} background:${element.fill}; border:1px solid ${element.stroke || element.fill}; border-radius:${element.radius || 0}px;"></div>`;
+  }).join("\n    ");
+  return `<!doctype html>
+<html lang="${hasRtl ? "ar" : "en"}" dir="${hasRtl ? "rtl" : "ltr"}">
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(slide.title)}</title>
+  ${hasRtl ? '<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;700;900&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">' : ""}
+  <style>body{margin:0}.slide-container{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:${hasRtl ? "Tajawal,Dubai,'Noto Kufi Arabic','Segoe UI',Arial,sans-serif" : "Aptos,'Segoe UI',Arial,sans-serif"}}</style>
+</head>
+<body>
+  <div class="slide-container" data-screen-label="${escapeHtml(slide.title)}">
+    ${objects}
+  </div>
+</body>
+</html>`;
+}
+
+function escapeHtml(value) {
+  return String(value || "").replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;"
+  }[ch]));
+}
+
+function renderCode() {
+  const slide = deck.slides[selected];
+  $("codeOutput").textContent = slideToHtml(slide);
+}
+
+function renderFiles() {
+  const rows = [
+    ["/", "folder"],
+    [`/${deck.metadata.slug}.slides`, "folder"],
+    [`/${deck.metadata.slug}.slides/assets`, "folder"],
+    [`/${deck.metadata.slug}.slides/slides`, "folder"],
+    [`/${deck.metadata.slug}.slides/manifest.json`, "json"],
+    [`/${deck.metadata.slug}.slides/brand.json`, "json"],
+    [`/${deck.metadata.slug}.slides/template.json`, "json"],
+    [`/${deck.metadata.slug}.slides/evidence.json`, "json"],
+    [`/${deck.metadata.slug}.slides/sources.json`, "json"],
+    [`/${deck.metadata.slug}.slides/documents.json`, "json"],
+    [`/${deck.metadata.slug}.slides/charts.json`, "json"],
+    [`/${deck.metadata.slug}.slides/references.json`, "json"],
+    [`/${deck.metadata.slug}.slides/reference-analysis.json`, "json"],
+    [`/${deck.metadata.slug}.slides/deck-dna.json`, "json"],
+    [`/${deck.metadata.slug}.slides/briefing.json`, "json"],
+    [`/${deck.metadata.slug}.slides/source-map.json`, "json"],
+    [`/${deck.metadata.slug}.slides/fact-check.json`, "json"],
+    [`/${deck.metadata.slug}.slides/review.json`, "json"],
+    [`/${deck.metadata.slug}.slides/arabic-audit.json`, "json"],
+    [`/${deck.metadata.slug}.slides/variants.json`, "json"],
+    [`/${deck.metadata.slug}.slides/outline.json`, "json"],
+    [`/${deck.metadata.slug}.slides/storyboard.json`, "json"],
+    ...deck.slides.map((slide) => [`/${deck.metadata.slug}.slides/slides/${slide.filename}`, "html"])
+  ];
+  $("fileTree").innerHTML = rows.map(([name, kind]) => `<div class="file-row"><strong>${kind}</strong><span>${name}</span></div>`).join("");
+}
+
+function renderAgent() {
+  const strategy = deck.strategy || {};
+  const cards = [
+    ["Brand", strategy.brand || deck.brand?.name || "Unbranded"],
+    ["Audience", strategy.audience || ""],
+    ["Objective", strategy.objective || ""],
+    ["Tone", strategy.tone || ""],
+    ["Evidence", `${strategy.evidenceCount || 0} point${strategy.evidenceCount === 1 ? "" : "s"}`],
+    ["Sources", `${strategy.sourceCount || 0} source${strategy.sourceCount === 1 ? "" : "s"}`],
+    ["Documents", `${strategy.documentCount || 0} document${strategy.documentCount === 1 ? "" : "s"}`],
+    ["Charts", `${strategy.chartCount || deck.charts?.length || 0} chart${(strategy.chartCount || deck.charts?.length || 0) === 1 ? "" : "s"}`],
+    ["References", `${strategy.referenceCount || deck.references?.length || 0} reference${(strategy.referenceCount || deck.references?.length || 0) === 1 ? "" : "s"}`],
+    ["Reference deck", strategy.referenceFingerprint || deck.referenceAnalysis?.fingerprint || "None"],
+    ["Deck DNA", deck.deckDNA?.fingerprint || "Style system ready"],
+    ["Briefing", `${deck.briefing?.perSlide?.length || 0} slide cues`],
+    ["Narrative", strategy.narrative || ""],
+    ["Visual direction", strategy.visualDirection || ""],
+    ["Export contract", strategy.exportContract || ""]
+  ].map(([label, value]) => `<div class="strategy-card"><strong>${label}</strong>${escapeHtml(value)}</div>`).join("");
+  const steps = (deck.agentLog || []).map((step) => `
+    <article class="agent-step">
+      <div class="agent-index">${step.index}</div>
+      <div>
+        <h3>${escapeHtml(step.title)}</h3>
+        <p>${escapeHtml(step.detail)}</p>
+      </div>
+    </article>
+  `).join("");
+  $("agentOutput").innerHTML = `<section class="strategy-grid">${cards}</section>${steps}`;
+}
+
+function renderReferenceAnalysis() {
+  const analysis = deck?.referenceAnalysis || referenceAnalysis;
+  const output = $("referenceOutput");
+  if (!output) return;
+  if (!analysis) {
+    output.innerHTML = `
+      <article class="reference-empty">
+        <h3>No reference deck analyzed</h3>
+        <p>Upload a PPTX, ZIP, or HTML deck to inspect its style structure.</p>
+      </article>
+    `;
+    return;
+  }
+  const synthesizedTheme = synthesizeReferenceTheme(deck?.theme || themes[$("theme")?.value] || themes.executive, analysis);
+  const palette = (analysis.palette || []).map((item) => `
+    <article class="dna-swatch-card">
+      <span class="dna-swatch" style="background:${escapeHtml(item.color)}"></span>
+      <div>
+        <strong>${escapeHtml(item.color)}</strong>
+        <p>${escapeHtml(item.role || "color")} / ${item.count || 0} uses</p>
+      </div>
+    </article>
+  `).join("");
+  const structure = Object.entries(analysis.structure || {}).map(([label, value]) => `
+    <article class="reference-stat">
+      <span>${escapeHtml(label.replace(/([A-Z])/g, " $1"))}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </article>
+  `).join("");
+  const takeaways = (analysis.takeaways || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  const samples = (analysis.textSamples || []).slice(0, 6).map((item) => `<span>${escapeHtml(item)}</span>`).join("");
+  const recipe = analysis.visualRecipe || {};
+  const recipeStats = recipe.available ? `
+    <div class="dna-stat-grid">
+      <div><strong>${escapeHtml(recipe.benchmark || "Reference")}</strong><span>Benchmark</span></div>
+      <div><strong>${escapeHtml(recipe.density || "n/a")}</strong><span>Visual density</span></div>
+      <div><strong>${recipe.avgObjectsPerSlide || 0}</strong><span>Objects/slide</span></div>
+      <div><strong>${Math.round((recipe.rtlSlideRatio || 0) * 100)}%</strong><span>RTL slides</span></div>
+      <div><strong>${Math.round((recipe.chromeSlideRatio || 0) * 100)}%</strong><span>Chrome rhythm</span></div>
+      <div><strong>${recipe.maxTitleSize || 0}px</strong><span>Largest title</span></div>
+    </div>
+    <div class="plan-meta">
+      ${(recipe.tags || []).map((tag) => `<span class="plan-chip">${escapeHtml(tag)}</span>`).join("")}
+      ${(recipe.topFonts || []).slice(0, 3).map((item) => `<span class="plan-chip">${escapeHtml(item.font)}</span>`).join("")}
+    </div>
+    <ul class="dna-notes">${(recipe.recommendations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+  ` : "<p>No visual recipe extracted.</p>";
+  const outline = (analysis.slideOutline || []).slice(0, 14).map((item) => `
+    <article class="reference-outline-card">
+      <div class="reference-outline-index">${item.slide || ""}</div>
+      <div>
+        <h3>${escapeHtml(item.title || `Slide ${item.slide || ""}`)}</h3>
+        <div class="plan-meta">
+          <span class="plan-chip">${escapeHtml(labelFromLayout(item.suggestedLayout || "slide"))}</span>
+          <span class="plan-chip">${escapeHtml(item.visualRole || "body")}</span>
+        </div>
+        <p>${escapeHtml((item.signals || []).slice(0, 3).join(" / ") || "No text cues extracted.")}</p>
+      </div>
+    </article>
+  `).join("");
+  const themeSwatches = ["bg", "paper", "ink", "muted", "accent", "accent2"].map((key) => `
+    <article class="reference-stat">
+      <span>${escapeHtml(key)}</span>
+      <strong><i class="reference-color-dot" style="background:${escapeHtml(synthesizedTheme[key] || "#ffffff")}"></i>${escapeHtml(synthesizedTheme[key] || "")}</strong>
+    </article>
+  `).join("");
+  output.innerHTML = `
+    <section class="reference-hero">
+      <div>
+        <span>Reference Fingerprint</span>
+        <strong>${escapeHtml(analysis.fingerprint || "")}</strong>
+        <p>${escapeHtml(analysis.summary || "")}</p>
+      </div>
+      <div class="reference-actions">
+        <button data-reference-action="import">Open Editable</button>
+        <button data-reference-action="apply">Use Style</button>
+        <button data-reference-action="outline">Use Outline</button>
+      </div>
+    </section>
+    <section class="dna-section">
+      <h2>Reusable Prompt</h2>
+      <p class="dna-prompt">${escapeHtml(analysis.reusablePrompt || "")}</p>
+    </section>
+    <section class="dna-section">
+      <h2>Synthesized Theme</h2>
+      <div class="reference-stat-grid">${themeSwatches}</div>
+    </section>
+    <section class="dna-section">
+      <h2>Visual Recipe</h2>
+      <p class="dna-prompt">${escapeHtml(recipe.summary || "No visual recipe extracted.")}</p>
+      ${recipeStats}
+    </section>
+    <section class="dna-two-col">
+      <article class="dna-section">
+        <h2>Palette</h2>
+        <div class="dna-palette">${palette || '<p>No colors found.</p>'}</div>
+      </article>
+      <article class="dna-section">
+        <h2>Typography</h2>
+        <div class="dna-stat-grid">
+          <div><strong>${analysis.typography?.titleSize || 0}px</strong><span>Title max</span></div>
+          <div><strong>${analysis.typography?.bodySize || 0}px</strong><span>Body signal</span></div>
+          <div><strong>${escapeHtml(analysis.typography?.sizeRange || "n/a")}</strong><span>Range</span></div>
+          <div><strong>${analysis.typography?.textRunCount || 0}</strong><span>Text runs</span></div>
+        </div>
+      </article>
+    </section>
+    <section class="dna-section">
+      <h2>Structure</h2>
+      <div class="reference-stat-grid">${structure}</div>
+    </section>
+    <section class="dna-section">
+      <h2>Slide Outline</h2>
+      <div class="reference-outline-grid">${outline || '<p>No slide outline extracted.</p>'}</div>
+    </section>
+    <section class="dna-section">
+      <h2>Analyzer Notes</h2>
+      <ul class="dna-notes">${takeaways}</ul>
+    </section>
+    <section class="dna-section">
+      <h2>Text Signals</h2>
+      <div class="reference-samples">${samples || '<span>No text extracted.</span>'}</div>
+    </section>
+  `;
+}
+
+function renderDeckDNA() {
+  const dna = buildDeckDNA(deck);
+  deck.deckDNA = dna;
+  if (!dna) return;
+  const palette = dna.palette.map((item) => `
+    <article class="dna-swatch-card">
+      <span class="dna-swatch" style="background:${escapeHtml(item.color)}"></span>
+      <div>
+        <strong>${escapeHtml(item.color)}</strong>
+        <p>${escapeHtml(item.role)} / ${item.count} uses / ${item.slideCount} slides</p>
+      </div>
+    </article>
+  `).join("");
+  const rhythm = Object.entries(dna.layoutRhythm.layoutCounts || {}).map(([layout, count]) => `
+    <span class="dna-chip">${escapeHtml(labelFromLayout(layout))}: ${count}</span>
+  `).join("");
+  const tokens = Object.entries(dna.styleTokens || {}).map(([label, value]) => `
+    <article class="dna-token">
+      <span>${escapeHtml(label.replace(/([A-Z])/g, " $1"))}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </article>
+  `).join("");
+  const recommendations = dna.recommendations.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  $("deckDnaOutput").innerHTML = `
+    <section class="dna-hero">
+      <div>
+        <span>Style Fingerprint</span>
+        <strong>${escapeHtml(dna.fingerprint)}</strong>
+        <p>${escapeHtml(dna.summary)}</p>
+      </div>
+      <div class="dna-proof">
+        <article><strong>${dna.proofSystem.evidenceCount}</strong><span>Evidence</span></article>
+        <article><strong>${dna.proofSystem.referenceCount}</strong><span>References</span></article>
+        <article><strong>${dna.proofSystem.chartCount}</strong><span>Charts</span></article>
+      </div>
+    </section>
+    <section class="dna-section">
+      <h2>Reusable Prompt</h2>
+      <p class="dna-prompt">${escapeHtml(dna.reusablePrompt)}</p>
+    </section>
+    <section class="dna-section">
+      <h2>Palette</h2>
+      <div class="dna-palette">${palette}</div>
+    </section>
+    <section class="dna-two-col">
+      <article class="dna-section">
+        <h2>Typography</h2>
+        <div class="dna-stat-grid">
+          <div><strong>${dna.typography.titleSize}px</strong><span>Title max</span></div>
+          <div><strong>${dna.typography.bodySize}px</strong><span>Body avg</span></div>
+          <div><strong>${dna.typography.sizeRange}</strong><span>Range</span></div>
+          <div><strong>${dna.typography.avgCharactersPerSlide}</strong><span>Chars/slide</span></div>
+        </div>
+      </article>
+      <article class="dna-section">
+        <h2>Layout Rhythm</h2>
+        <div class="dna-chip-row">${rhythm}</div>
+        <div class="dna-stat-grid compact">
+          <div><strong>${dna.layoutRhythm.avgObjectCount}</strong><span>Objects/slide</span></div>
+          <div><strong>${dna.layoutRhythm.visualRatio}</strong><span>Visual ratio</span></div>
+          <div><strong>${escapeHtml(dna.layoutRhythm.density)}</strong><span>Density</span></div>
+          <div><strong>${escapeHtml(dna.layoutRhythm.primaryLayout)}</strong><span>Primary layout</span></div>
+        </div>
+      </article>
+    </section>
+    <section class="dna-section">
+      <h2>Style Tokens</h2>
+      <div class="dna-token-grid">${tokens}</div>
+    </section>
+    <section class="dna-section">
+      <h2>Creative Director Notes</h2>
+      <ul class="dna-notes">${recommendations}</ul>
+    </section>
+  `;
+}
+
+function renderBriefing() {
+  const briefing = buildBriefing(deck);
+  deck.briefing = briefing;
+  if (!briefing) return;
+  const keyMessages = briefing.keyMessages.map((item) => `
+    <article class="briefing-card">
+      <h3>${escapeHtml(item.title)}</h3>
+      <p>${escapeHtml(item.message)}</p>
+    </article>
+  `).join("");
+  const evidence = briefing.evidenceCallouts.length
+    ? briefing.evidenceCallouts.map((item) => `
+      <article class="briefing-card compact">
+        <strong>${escapeHtml(item.metric)}</strong>
+        <p>${escapeHtml(item.label)} ${escapeHtml(item.citation || "")}</p>
+        <span>${escapeHtml(item.source)}</span>
+      </article>
+    `).join("")
+    : '<article class="briefing-card compact"><strong>0</strong><p>No evidence callouts yet.</p></article>';
+  const objections = briefing.objectionHandling.map((item) => `
+    <article class="briefing-card">
+      <h3>${escapeHtml(item.objection)}</h3>
+      <p>${escapeHtml(item.response)}</p>
+    </article>
+  `).join("");
+  const perSlide = briefing.perSlide.map((item) => `
+    <article class="briefing-slide">
+      <div class="briefing-index">${item.slide}</div>
+      <div>
+        <h3>${escapeHtml(item.title)}</h3>
+        <p>${escapeHtml(item.cue)}</p>
+        <div class="source-claims">
+          ${item.evidence.length
+            ? item.evidence.map((claim) => `<span class="source-claim">${escapeHtml(claim.metric)} ${escapeHtml(claim.citation || "")}</span>`).join("")
+            : '<span class="source-claim muted">No numeric evidence cue</span>'}
+        </div>
+      </div>
+    </article>
+  `).join("");
+  $("briefingOutput").innerHTML = `
+    <section class="briefing-summary">
+      <strong>${escapeHtml(briefing.title)}</strong>
+      <p>${escapeHtml(briefing.summary)}</p>
+      <div class="briefing-two">
+        <article><span>Open</span>${escapeHtml(briefing.opening)}</article>
+        <article><span>Close</span>${escapeHtml(briefing.close)}</article>
+      </div>
+    </section>
+    <section class="briefing-section">
+      <h2>Key Messages</h2>
+      <div class="briefing-grid">${keyMessages}</div>
+    </section>
+    <section class="briefing-section">
+      <h2>Evidence Cues</h2>
+      <div class="briefing-grid">${evidence}</div>
+    </section>
+    <section class="briefing-section">
+      <h2>Objection Handling</h2>
+      <div class="briefing-grid">${objections}</div>
+    </section>
+    <section class="briefing-section">
+      <h2>Slide Talk Track</h2>
+      <div class="briefing-list">${perSlide}</div>
+    </section>
+  `;
+}
+
+function renderOutline() {
+  const items = normalizeOutlineItems(outlineDraft.length ? outlineDraft : deck.outline || []);
+  if (!items.length) {
+    $("outlineOutput").innerHTML = `
+      <article class="outline-toolbar">
+        <div>
+          <strong>No outline drafted yet</strong>
+          <span>Use Draft Outline to create a slide-by-slide structure before building the deck.</span>
+        </div>
+        <button data-outline-action="draft">Draft Outline</button>
+      </article>
+    `;
+    return;
+  }
+  const cards = items.map((item, i) => `
+    <article class="outline-card">
+      <div class="outline-index">${i + 1}</div>
+      <div class="outline-fields">
+        <label>
+          Slide Title
+          <input data-outline-action="title" data-outline-index="${i}" value="${escapeHtml(item.title)}">
+        </label>
+        <label>
+          Brief
+          <textarea data-outline-action="brief" data-outline-index="${i}">${escapeHtml(item.brief)}</textarea>
+        </label>
+        <label>
+          Speaker Notes
+          <textarea data-outline-action="notes" data-outline-index="${i}">${escapeHtml(item.speakerNotes)}</textarea>
+        </label>
+        <div class="plan-meta">
+          <span class="plan-chip">${escapeHtml(item.layout)}</span>
+          <span class="plan-chip">${escapeHtml(item.role)}</span>
+          <span class="plan-chip">${escapeHtml(item.qaFocus || "QA")}</span>
+        </div>
+      </div>
+      <div class="outline-actions">
+        <button data-outline-action="up" data-outline-index="${i}" ${i === 0 ? "disabled" : ""}>Up</button>
+        <button data-outline-action="down" data-outline-index="${i}" ${i === items.length - 1 ? "disabled" : ""}>Down</button>
+      </div>
+    </article>
+  `).join("");
+  $("outlineOutput").innerHTML = `
+    <article class="outline-toolbar">
+      <div>
+        <strong>${items.length}-slide outline</strong>
+        <span>${deck.metadata?.outlineStatus === "approved" ? "Approved outline is attached to this deck." : "Review the structure, then build slides from it."}</span>
+      </div>
+      <div class="button-row">
+        <button data-outline-action="draft">Redraft</button>
+        <button data-outline-action="build" class="primary">Build Slides</button>
+      </div>
+    </article>
+    ${cards}
+  `;
+}
+
+function renderPlan() {
+  const rows = deck.slides.map((slide, i) => `
+    <article class="plan-card">
+      <h3>${i + 1}. ${escapeHtml(slide.title || slide.layout)}</h3>
+      <p><strong>Brief:</strong> ${escapeHtml(slide.brief || "")}</p>
+      <p><strong>Speaker note:</strong> ${escapeHtml(slide.speakerNotes || "")}</p>
+      <div class="plan-meta">
+        <span class="plan-chip">${escapeHtml(slide.layout)}</span>
+        <span class="plan-chip">${escapeHtml(slide.qaFocus || "QA")}</span>
+        <span class="plan-chip">${slide.elements.length} objects</span>
+      </div>
+    </article>
+  `).join("");
+  $("planOutput").innerHTML = rows;
+}
+
+function renderObjectInspector() {
+  const slide = deck.slides[selected];
+  const element = currentElement();
+  if (!element) {
+    $("objectOutput").innerHTML = `
+      <article class="object-card">
+        <h3>No object selected</h3>
+        <p>Click any slide object in Preview, or add a new object to the selected slide.</p>
+        <div class="object-actions">
+          <button data-object-action="addText">Add Text</button>
+          <button data-object-action="addShape">Add Shape</button>
+        </div>
+      </article>
+    `;
+    return;
+  }
+  const isText = element.type === "text";
+  $("objectOutput").innerHTML = `
+    <article class="object-card">
+      <h3>${escapeHtml(isText ? "Text Object" : `${labelFromLayout(element.type)} Object`)}</h3>
+      <p>Slide ${selected + 1}: ${escapeHtml(slide.title || slide.layout)}</p>
+      <div class="object-grid">
+        <label>X <input data-object-field="x" type="number" value="${Math.round(element.x)}"></label>
+        <label>Y <input data-object-field="y" type="number" value="${Math.round(element.y)}"></label>
+        <label>Width <input data-object-field="w" type="number" value="${Math.round(element.w)}"></label>
+        <label>Height <input data-object-field="h" type="number" value="${Math.round(element.h)}"></label>
+      </div>
+      ${isText ? `
+        <label>Text
+          <textarea data-object-field="text">${escapeHtml(element.text || "")}</textarea>
+        </label>
+        <div class="object-grid two">
+          <label>Font Size <input data-object-field="size" type="number" min="10" max="140" value="${Math.round(element.size || 28)}"></label>
+          <label>Text Color <input data-object-field="fill" type="color" value="${escapeHtml(normalizeHex(element.fill, "#111827"))}"></label>
+          <label>Align
+            <select data-object-field="align">
+              ${["left", "center", "right"].map((value) => `<option value="${value}" ${element.align === value ? "selected" : ""}>${labelFromLayout(value)}</option>`).join("")}
+            </select>
+          </label>
+          <label>Bold
+            <select data-object-field="bold">
+              <option value="true" ${element.bold ? "selected" : ""}>On</option>
+              <option value="false" ${!element.bold ? "selected" : ""}>Off</option>
+            </select>
+          </label>
+        </div>
+      ` : `
+        <div class="object-grid two">
+          <label>Fill <input data-object-field="fill" type="color" value="${escapeHtml(normalizeHex(element.fill, deck.theme.accent))}"></label>
+          <label>Stroke <input data-object-field="stroke" type="color" value="${escapeHtml(normalizeHex(element.stroke || element.fill, deck.theme.accent))}"></label>
+          <label>Radius <input data-object-field="radius" type="number" min="0" max="160" value="${Math.round(element.radius || 0)}"></label>
+          <label>Type <input value="${escapeHtml(element.type)}" disabled></label>
+        </div>
+      `}
+      <div class="object-actions">
+        <button data-object-action="apply" class="primary">Apply</button>
+        <button data-object-action="duplicate">Duplicate</button>
+        <button data-object-action="delete">Delete</button>
+        <button data-object-action="addText">Add Text</button>
+        <button data-object-action="addShape">Add Shape</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderTemplates() {
+  const output = $("templateOutput");
+  if (!output) return;
+  const templates = loadTemplates();
+  if (!templates.length) {
+    output.innerHTML = `
+      <article class="template-card">
+        <h3>No templates saved</h3>
+        <p>Save the current brand and theme to reuse it on future decks.</p>
+      </article>
+    `;
+    return;
+  }
+  output.innerHTML = templates.map((template) => {
+    const swatches = ["bg", "paper", "ink", "accent", "accent2"].map((key) => (
+      `<span class="template-swatch" style="background:${escapeHtml(template.theme?.[key] || "#ffffff")}"></span>`
+    )).join("");
+    return `
+      <article class="template-card ${$("templateSelect")?.value === template.id ? "active" : ""}">
+        <div class="template-head">
+          <div>
+            <h3>${escapeHtml(template.name)}</h3>
+            <p>${escapeHtml(template.brand?.name || "Unbranded")} / ${escapeHtml(template.brand?.tone || "Board-ready")}</p>
+          </div>
+          <div class="template-swatches">${swatches}</div>
+        </div>
+        <div class="plan-meta">
+          <span class="plan-chip">${escapeHtml(template.theme?.name || template.themeKey || "Theme")}</span>
+          <span class="plan-chip">${escapeHtml(template.density || "balanced")}</span>
+          <span class="plan-chip">${template.slideCount || template.layoutSignature?.length || 0} slides</span>
+          ${template.deckDNA?.fingerprint ? `<span class="plan-chip">${escapeHtml(template.deckDNA.fingerprint)}</span>` : ""}
+        </div>
+        <div class="template-actions">
+          <button data-template-action="select" data-template-id="${template.id}">Select</button>
+          <button data-template-action="apply" data-template-id="${template.id}">Apply</button>
+          <button data-template-action="delete" data-template-id="${template.id}">Delete</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderStoryboard() {
+  const items = deck.storyboard || buildStoryboard();
+  $("storyboardOutput").innerHTML = items.map((item, i) => `
+    <article class="story-card">
+      <div class="story-index">${i + 1}</div>
+      <div class="story-fields">
+        <label>
+          Slide Title
+          <input data-story-action="title" data-story-index="${i}" value="${escapeHtml(item.title)}">
+        </label>
+        <label>
+          Speaker Notes
+          <textarea data-story-action="notes" data-story-index="${i}">${escapeHtml(item.speakerNotes)}</textarea>
+        </label>
+        <div class="plan-meta">
+          <span class="plan-chip">${escapeHtml(item.layout)}</span>
+          <span class="plan-chip">${escapeHtml(item.qaFocus || "QA")}</span>
+          <span class="plan-chip">${escapeHtml(item.filename)}</span>
+        </div>
+      </div>
+      <div class="story-actions">
+        <button data-story-action="up" data-story-index="${i}" ${i === 0 ? "disabled" : ""}>Up</button>
+        <button data-story-action="down" data-story-index="${i}" ${i === items.length - 1 ? "disabled" : ""}>Down</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderEvidence() {
+  const items = deck.evidence || [];
+  if (!items.length) {
+    $("evidenceOutput").innerHTML = '<article class="evidence-card"><strong>0</strong>No supplied evidence points<span>Deck content is generated from the request and brief.</span></article>';
+    return;
+  }
+  $("evidenceOutput").innerHTML = items.map((item, i) => `
+    <article class="evidence-card">
+      <strong>${escapeHtml(item.metric)}</strong>
+      ${escapeHtml(item.label)}
+      <span>${i + 1}. ${escapeHtml(item.source || "User brief")}</span>
+    </article>
+  `).join("");
+}
+
+function renderSources() {
+  const sources = deck.sources || [];
+  if (!sources.length) {
+    $("sourcesOutput").innerHTML = '<article class="source-card"><strong>0 sources</strong><p>No source brief supplied.</p></article>';
+    return;
+  }
+  const evidenceBySource = new Map();
+  (deck.evidence || []).forEach((item) => {
+    if (!item.sourceId) return;
+    if (!evidenceBySource.has(item.sourceId)) evidenceBySource.set(item.sourceId, []);
+    evidenceBySource.get(item.sourceId).push(item);
+  });
+  $("sourcesOutput").innerHTML = sources.map((source, i) => {
+    const claims = evidenceBySource.get(source.id) || [];
+    const claimList = claims.length
+      ? claims.map((claim) => `<span class="source-claim">${escapeHtml(claim.metric)} ${escapeHtml(claim.label)}</span>`).join("")
+      : '<span class="source-claim muted">Qualitative source</span>';
+    return `
+      <article class="source-card">
+        <div class="source-head">
+          <strong>${i + 1}. ${escapeHtml(source.label)}</strong>
+          <span>${escapeHtml(source.type)}</span>
+        </div>
+        <p>${escapeHtml(source.excerpt || "")}</p>
+        ${source.url ? `<a href="${escapeHtml(source.url)}" target="_blank" rel="noreferrer">${escapeHtml(sourceHostname(source.url) || source.url)}</a>` : ""}
+        <div class="source-claims">${claimList}</div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderDocuments() {
+  const documents = deck.documents || [];
+  if (!documents.length) {
+    $("documentsOutput").innerHTML = '<article class="document-card"><strong>0 documents</strong><p>No document brief supplied.</p></article>';
+    return;
+  }
+  const evidenceBySource = new Map();
+  (deck.evidence || []).forEach((item) => {
+    if (!item.sourceId) return;
+    if (!evidenceBySource.has(item.sourceId)) evidenceBySource.set(item.sourceId, []);
+    evidenceBySource.get(item.sourceId).push(item);
+  });
+  $("documentsOutput").innerHTML = documents.map((item, i) => {
+    const claims = evidenceBySource.get(item.id) || [];
+    return `
+      <article class="document-card">
+        <div class="document-head">
+          <strong>${i + 1}. ${escapeHtml(item.name)}</strong>
+          <span>${item.wordCount || 0} words</span>
+        </div>
+        <p>${escapeHtml(item.excerpt || "")}</p>
+        <div class="source-claims">
+          ${claims.length
+            ? claims.map((claim) => `<span class="source-claim">${escapeHtml(claim.metric)} ${escapeHtml(claim.label)}</span>`).join("")
+            : '<span class="source-claim muted">No numeric claims extracted</span>'}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderReferences() {
+  const references = deck.references || [];
+  if (!references.length) {
+    $("referencesOutput").innerHTML = '<article class="reference-card"><strong>0 references</strong><p>Add source links, document notes, or evidence provenance to build numbered citations.</p></article>';
+    return;
+  }
+  const evidenceById = new Map((deck.evidence || []).map((item) => [item.id, item]));
+  $("referencesOutput").innerHTML = references.map((item) => {
+    const claims = (item.evidenceIds || [])
+      .map((id) => evidenceById.get(id))
+      .filter(Boolean);
+    return `
+      <article class="reference-card">
+        <div class="reference-head">
+          <div class="reference-index">${escapeHtml(item.citation)}</div>
+          <div>
+            <strong>${escapeHtml(item.label)}</strong>
+            <p>${escapeHtml(item.excerpt || "No excerpt supplied.")}</p>
+          </div>
+          <span>${escapeHtml(item.type)}</span>
+        </div>
+        ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">${escapeHtml(sourceHostname(item.url) || item.url)}</a>` : ""}
+        <div class="source-claims">
+          ${claims.length
+            ? claims.map((claim) => `<span class="source-claim">${escapeHtml(claim.metric)} ${escapeHtml(claim.label)}</span>`).join("")
+            : '<span class="source-claim muted">No mapped numeric claim</span>'}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderCharts() {
+  const charts = deck.charts || [];
+  if (!charts.length) {
+    $("chartsOutput").innerHTML = '<article class="chart-card"><strong>0 charts</strong><p>Add numeric evidence, source notes, or document claims to generate editable data visuals.</p></article>';
+    return;
+  }
+  $("chartsOutput").innerHTML = charts.map((chart, i) => `
+    <article class="chart-card">
+      <div class="chart-head">
+        <div>
+          <strong>${i + 1}. ${escapeHtml(chart.title)}</strong>
+          <p>${escapeHtml(chart.subtitle || "")}</p>
+        </div>
+        <span>${escapeHtml(chart.type)}</span>
+      </div>
+      <div class="chart-bars">
+        ${(chart.items || []).map((item) => `
+          <div class="chart-row">
+            <div>
+              <b>${escapeHtml(item.metric)}</b>
+              <span>${escapeHtml(item.label)}</span>
+            </div>
+            <div class="chart-bar-track">
+              <span style="width:${Math.round((item.ratio || 0) * 100)}%"></span>
+            </div>
+            <em>${escapeHtml(item.source || "")}</em>
+          </div>
+        `).join("")}
+      </div>
+    </article>
+  `).join("");
+}
+
+function normalizeClaimText(value) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9%$./]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function slideTextCorpus() {
+  return (deck.slides || [])
+    .flatMap((slide) => slide.elements || [])
+    .filter((element) => element.type === "text")
+    .map((element) => element.text || "")
+    .join(" ");
+}
+
+function analyzeFactCheck() {
+  if (!deck) return null;
+  const sources = deck.sources || [];
+  const evidence = deck.evidence || [];
+  const corpus = normalizeClaimText(slideTextCorpus());
+  const sourceById = new Map(sources.map((source) => [source.id, source]));
+  const checks = evidence.map((item, index) => {
+    const source = item.sourceId ? sourceById.get(item.sourceId) : sources.find((candidate) => candidate.label === item.source);
+    const metricInSlides = item.metric ? corpus.includes(normalizeClaimText(item.metric)) : false;
+    const labelWords = normalizeClaimText(item.label).split(" ").filter((word) => word.length > 3);
+    const labelHits = labelWords.filter((word) => corpus.includes(word)).length;
+    const labelInSlides = labelWords.length ? labelHits / labelWords.length >= 0.45 : true;
+    const hasSource = Boolean(source || item.source);
+    const documentBacked = source?.type === "document";
+    const linked = Boolean(source?.url) || documentBacked;
+    const supported = hasSource && (item.metric ? metricInSlides : labelInSlides);
+    let status = "pass";
+    if (!hasSource) status = "issue";
+    else if (!supported) status = "warning";
+    else if (!linked && item.sourceId) status = "warning";
+    return {
+      id: item.id || `ev-${index + 1}`,
+      status,
+      metric: item.metric,
+      label: item.label,
+      source: source?.label || item.source || "Missing source",
+      sourceType: source?.type || (item.source ? "brief" : "missing"),
+      url: source?.url || "",
+      metricInSlides,
+      labelInSlides,
+      linked,
+      sourceCue: documentBacked ? "Document source" : linked ? "Linked source" : "Source note",
+      detail: !hasSource
+        ? "No source is attached to this claim."
+        : !supported
+          ? item.metric && !metricInSlides
+            ? "Claim is sourced, but the numeric metric is not clearly used in slide text."
+            : "Claim is sourced but does not clearly appear in slide text."
+          : linked
+            ? documentBacked
+              ? "Claim appears in the deck and is backed by an uploaded document."
+              : "Claim appears in the deck and has a linked source."
+            : "Claim appears in the deck with source notes but no URL."
+    };
+  });
+  const unsupportedNumbers = [];
+  const evidenceMetrics = new Set(evidence.map((item) => normalizeClaimText(item.metric)).filter(Boolean));
+  const numberMatches = slideTextCorpus().match(/[$]?\d[\d,.]*(?:\s?(?:%|x|k|m|b|days|weeks|hours|hrs|users|customers|sites|\+)(?:\/(?:day|week|month|year|mo|yr))?)?/gi) || [];
+  [...new Set(numberMatches.map((item) => item.trim()).filter(Boolean))].forEach((value) => {
+    const normalized = normalizeClaimText(value);
+    const bareSmallNumber = /^0?\d+$/.test(normalized) && Number(normalized) <= 10;
+    const commonTimelineNumber = /^(30|60|90)$/.test(normalized);
+    const monthMarker = /^0[1-9]\s?m$/.test(normalized);
+    if (normalized && !evidenceMetrics.has(normalized) && !bareSmallNumber && !commonTimelineNumber && !monthMarker) {
+      unsupportedNumbers.push(value);
+    }
+  });
+  const issueCount = checks.filter((item) => item.status === "issue").length;
+  const warningCount = checks.filter((item) => item.status === "warning").length + Math.min(unsupportedNumbers.length, 3);
+  const passCount = checks.filter((item) => item.status === "pass").length;
+  const linkedCount = checks.filter((item) => item.linked).length;
+  const noEvidencePenalty = evidence.length ? 0 : 34;
+  const score = clampScore(100 - issueCount * 22 - warningCount * 9 - noEvidencePenalty + Math.min(6, linkedCount * 2));
+  return {
+    score,
+    status: !evidence.length ? "No evidence" : issueCount ? "Needs sources" : warningCount ? "Review claims" : "Verified",
+    generatedAt: new Date().toISOString(),
+    summary: {
+      evidenceCount: evidence.length,
+      sourceCount: sources.length,
+      linkedSourceCount: sources.filter((source) => source.url).length,
+      documentSourceCount: sources.filter((source) => source.type === "document").length,
+      passCount,
+      warningCount,
+      issueCount,
+      unsupportedNumberCount: unsupportedNumbers.length
+    },
+    checks,
+    unsupportedNumbers
+  };
+}
+
+function updateFactCheck() {
+  deck.factCheck = analyzeFactCheck();
+  return deck.factCheck;
+}
+
+function renderFactCheck() {
+  const report = updateFactCheck();
+  if (!report) return;
+  const sourceSupport = [
+    report.summary.linkedSourceCount ? `${report.summary.linkedSourceCount} linked` : "",
+    report.summary.documentSourceCount ? `${report.summary.documentSourceCount} document-backed` : ""
+  ].filter(Boolean).join(", ") || "0 linked";
+  const rows = report.checks.length
+    ? report.checks.map((item) => `
+      <article class="fact-card ${item.status}">
+        <div class="fact-status">${escapeHtml(item.status.toUpperCase())}</div>
+        <div>
+          <h3>${escapeHtml(item.metric || "Claim")} ${escapeHtml(item.label || "")}</h3>
+          <p>${escapeHtml(item.detail)}</p>
+          <div class="plan-meta">
+            <span class="plan-chip">${escapeHtml(item.source)}</span>
+            <span class="plan-chip">${item.metricInSlides ? "Metric in slides" : "Metric not found"}</span>
+            <span class="plan-chip">${escapeHtml(item.sourceCue || (item.linked ? "Linked source" : "Source note"))}</span>
+          </div>
+        </div>
+      </article>
+    `).join("")
+    : '<article class="fact-card warning"><div class="fact-status">WARN</div><div><h3>No evidence to check</h3><p>Add evidence rows or source notes to enable claim checking.</p></div></article>';
+  const unsupported = report.unsupportedNumbers.length
+    ? `<article class="fact-card warning"><div class="fact-status">WARN</div><div><h3>Numbers Without Evidence</h3><p>${escapeHtml(report.unsupportedNumbers.slice(0, 10).join(", "))}</p></div></article>`
+    : "";
+  $("factCheckOutput").innerHTML = `
+    <article class="fact-summary">
+      <strong>${report.score}</strong>
+      <span>${escapeHtml(report.status)}</span>
+      <p>${report.summary.evidenceCount} evidence point${report.summary.evidenceCount === 1 ? "" : "s"}, ${report.summary.sourceCount} source${report.summary.sourceCount === 1 ? "" : "s"}, ${sourceSupport}.</p>
+    </article>
+    ${unsupported}
+    ${rows}
+  `;
+}
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function countArabicChars(value) {
+  return (String(value || "").match(/[\u0600-\u06ff]/g) || []).length;
+}
+
+function countLatinChars(value) {
+  return (String(value || "").match(/[A-Za-z]/g) || []).length;
+}
+
+function analyzeArabicLuxeQuality(deckInput = deck) {
+  const theme = deckInput?.theme || {};
+  const slides = deckInput?.slides || [];
+  const textElements = slides.flatMap((slide) => (slide.elements || []).filter((element) => element.type === "text"));
+  const shapeElements = slides.flatMap((slide) => (slide.elements || []).filter((element) => ["shape", "imageBlock"].includes(element.type)));
+  const rtlText = textElements.filter((element) => element.rtl);
+  const rtlOrArabic = textElements.filter((element) => element.rtl || countArabicChars(element.text));
+  const applies = !!theme.rtlPremium || rtlOrArabic.length >= Math.max(3, Math.ceil(textElements.length * 0.35));
+  if (!applies) {
+    return { applies: false, score: 0, detail: "Arabic premium benchmark is not active.", signals: [], recommendations: [] };
+  }
+
+  const allText = textElements.map((element) => element.text || "").join(" ");
+  const isCinematic = !!theme.cinematicStory;
+  const commonLatinIgnore = /\b(DECKFORGE|SHARAYEH|AI|PPTX|PDF|TAM|OUR|VISION|CONTACT|EST|BUILT|WITH)\b/gi;
+  const cinematicLatinIgnore = /\b(CASE|STUDY|ORIGIN|TIMELINE|SCALE|FINANCE|ACQUISITIONS|TRANSFORMATION|CULTURE|LESSONS|FINALE|FACEBOOK|META|INSTAGRAM|WHATSAPP|OCULUS|MOVE|FAST|BOLD|IMPACT|OPEN|VOL|FIN|MMXXVI|IPO|MAU)\b/gi;
+  const scoredTextElements = isCinematic
+    ? textElements.filter((element) => {
+      const value = String(element.text || "").trim();
+      const arabicCount = countArabicChars(value);
+      const latinCount = countLatinChars(value);
+      const pageIndicator = /^\d{1,2}\s*\/\s*\d{1,2}/.test(value);
+      const shortEditorialLatin = arabicCount === 0 && latinCount > 0 && value.length <= 72;
+      return !pageIndicator && !shortEditorialLatin;
+    })
+    : textElements;
+  const latinScoreText = isCinematic
+    ? textElements.map((element) => {
+      const value = String(element.text || "").trim();
+      if (countArabicChars(value) === 0 && countLatinChars(value) > 0 && value.length <= 72) return "";
+      return value;
+    }).join(" ")
+    : allText;
+  const arabicChars = countArabicChars(allText);
+  const latinChars = countLatinChars(latinScoreText.replace(commonLatinIgnore, "").replace(isCinematic ? cinematicLatinIgnore : /$a/, ""));
+  const arabicFirstRatio = arabicChars / Math.max(1, arabicChars + latinChars);
+  const rtlScoredText = scoredTextElements.filter((element) => element.rtl || countArabicChars(element.text));
+  const rtlRatio = rtlScoredText.length / Math.max(1, scoredTextElements.length);
+  const arabicDeckFontRatio = rtlText.filter((element) => /tajawal|cairo|amiri/i.test(String(element.font || ""))).length / Math.max(1, rtlText.length);
+  const titleCoverage = slides.filter((slide) => (slide.elements || []).some((element) => (
+    element.type === "text" && element.rtl && element.bold && Number(element.size) >= 52 && countArabicChars(element.text) >= 4
+  ))).length / Math.max(1, slides.length);
+  const chromeCoverage = slides.filter((slide) => {
+    const texts = (slide.elements || []).filter((element) => element.type === "text").map((element) => element.text || "").join(" ");
+    return /الفصل|البداية|السياق|المشكلة|الحل|السوق|الخطة|الخاتمة/.test(texts) || /\d{2}\s*\/\s*\d{2}/.test(texts);
+  }).length / Math.max(1, slides.length);
+  const darkSurfaceCount = shapeElements.filter((element) => {
+    const fill = normalizeHex(element.fill, "").toLowerCase();
+    return fill === normalizeHex(theme.bg, "").toLowerCase()
+      || ["#0a2540", "#143a6b", "#0a0a0f", "#0a0a0a", "#050505", "#12121a", "#1a1a24"].includes(fill);
+  }).length;
+  const accentLineCount = shapeElements.filter((element) => {
+    const fill = normalizeHex(element.fill, "").toLowerCase();
+    return fill === normalizeHex(theme.accent, "").toLowerCase() && (Number(element.w) <= 18 || Number(element.h) <= 8);
+  }).length;
+  const avgObjects = slides.length ? slides.reduce((sum, slide) => sum + (slide.elements || []).length, 0) / slides.length : 0;
+  const premiumCardScore = Math.min(1, avgObjects / 12) * 0.55 + Math.min(1, shapeElements.length / Math.max(1, textElements.length)) * 0.45;
+  const bgHex = normalizeHex(theme.bg, "").toLowerCase();
+  const accentHex = normalizeHex(theme.accent, "").toLowerCase();
+  const luxePalette = bgHex === "#0a2540" && accentHex === "#c9a961";
+  const investorPalette = bgHex === "#0a0a0f" && accentHex === "#d4a574";
+  const cinematicPalette = bgHex === "#0a0a0a" && accentHex === "#c9a961";
+  const paletteScore = luxePalette || investorPalette || cinematicPalette ? 1 : (theme.investorDark ? 0.75 : 0.45);
+  const coverDarkSignal = slides.some((slide) => slide.layout === "cover" && (slide.elements || []).some((element) => {
+    const fill = normalizeHex(element.fill, "").toLowerCase();
+    return ["shape", "imageBlock"].includes(element.type) && ["#0a2540", "#0a0a0f", "#0a0a0a", "#050505", "#12121a"].includes(fill);
+  }));
+  const score = clampScore(
+    (theme.rtlPremium ? 12 : 0)
+    + Math.min(1, rtlRatio / 0.65) * 14
+    + Math.min(1, arabicDeckFontRatio / 0.8) * 14
+    + Math.min(1, arabicFirstRatio / 0.72) * 12
+    + paletteScore * 12
+    + Math.min(1, chromeCoverage / 0.8) * 12
+    + Math.min(1, titleCoverage / 0.9) * 10
+    + premiumCardScore * 10
+    + (darkSurfaceCount >= slides.length && accentLineCount >= Math.max(2, slides.length - 1) ? 4 : 0)
+    + (coverDarkSignal ? 2 : 0)
+  );
+  const signals = [
+    `${Math.round(rtlRatio * 100)}% ${isCinematic ? "scored RTL text objects" : "RTL text objects"}`,
+    `${Math.round(arabicDeckFontRatio * 100)}% Arabic deck fonts on RTL text`,
+    `${Math.round(arabicFirstRatio * 100)}% Arabic-first copy`,
+    `${Math.round(chromeCoverage * 100)}% editorial chrome coverage`,
+    `${Math.round(titleCoverage * 100)}% Arabic title hierarchy coverage`,
+    `${Math.round(avgObjects)} objects/slide`
+  ];
+  const recommendations = [];
+  if (rtlRatio < 0.65) recommendations.push("Set more text objects to RTL and right alignment.");
+  if (arabicDeckFontRatio < 0.8) recommendations.push("Use Cairo, Tajawal, or Amiri consistently for Arabic copy throughout the deck.");
+  if (arabicFirstRatio < 0.72) recommendations.push("Reduce untranslated English body copy while keeping purposeful bilingual labels.");
+  if (chromeCoverage < 0.8) recommendations.push("Add section kickers, page indicators, or footer bands to match the Arabic benchmark rhythm.");
+  if (titleCoverage < 0.9) recommendations.push("Give every slide a large Arabic title with clear hierarchy.");
+  if (premiumCardScore < 0.72) recommendations.push("Increase composed card/chrome structure instead of sparse generic layouts.");
+  return {
+    applies: true,
+    score,
+    status: score >= 92 ? "Benchmark-grade Arabic RTL" : score >= 82 ? "Arabic RTL ready" : score >= 70 ? "Arabic RTL needs polish" : "Below Arabic benchmark",
+    detail: `${score}/100 Arabic premium benchmark: ${signals.join("; ")}.`,
+    signals,
+    recommendations
+  };
+}
+
+function analyzeDeck() {
+  if (!deck) return null;
+  const qaIssues = (deck.qa || []).filter((item) => item.level !== "pass");
+  const layouts = deck.slides.map((slide) => slide.layout);
+  const investorExpected = deck.theme?.investorDark
+    ? ["vision", "problem", "solution", "how-it-works", "traction", "market", "team", "funding"]
+    : ["problem", "solution", "market", "product", "business-model", "traction", "gtm", "financials", "ask"];
+  const expectedByArchetype = {
+    "investor-pitch": investorExpected,
+    "success-story": ["origin", "timeline", "scale", "financial-power", "acquisitions", "transformation", "culture", "lessons"],
+    sales: ["client-context", "buyer-pain", "proposed-solution", "differentiators", "proof", "scope", "implementation", "commercial-case", "next-steps"],
+    training: ["learning-outcomes", "learner-context", "core-concepts", "practice-loop", "example-walkthrough", "checklist", "assessment", "rollout-plan"]
+  };
+  const expectedLayouts = expectedByArchetype[deck.archetype] || [];
+  const expectedCount = expectedLayouts.length
+    ? expectedLayouts.filter((layout) => layouts.includes(layout)).length
+    : Math.min(5, layouts.length);
+  const notesCount = deck.slides.filter((slide) => (slide.speakerNotes || "").length > 12).length;
+  const evidenceCount = deck.evidence?.length || 0;
+  const sourceCount = deck.sources?.length || 0;
+  const chartCount = deck.charts?.length || 0;
+  const factCheck = deck.factCheck || analyzeFactCheck();
+  const factScore = factCheck?.score || 0;
+  const brandReady = deck.brand?.configured ? 1 : 0;
+  const qaPenalty = Math.min(30, qaIssues.length * 8);
+  const storyScore = clampScore(58 + expectedCount * 4 + (deck.plan?.length === deck.slides.length ? 12 : 0));
+  const designScore = clampScore(96 - qaPenalty - Math.max(0, deck.slides.length - 12) * 2);
+  const evidenceBase = evidenceCount ? 64 + Math.min(24, evidenceCount * 8) + Math.min(8, sourceCount * 2) : sourceCount ? 56 + Math.min(16, sourceCount * 4) : 42;
+  const evidenceScore = clampScore(evidenceCount || sourceCount ? Math.round(evidenceBase * 0.72 + factScore * 0.28) : evidenceBase);
+  const deliveryScore = clampScore(54 + Math.round((notesCount / Math.max(1, deck.slides.length)) * 34) + brandReady * 8);
+  const exportScore = clampScore(68 + (deck.metadata?.slug ? 8 : 0) + (deck.brand ? 8 : 0) + (deck.evidence ? 8 : 0) + (chartCount ? 4 : 0) + (!qaIssues.length ? 8 : 0));
+  const arabicAudit = analyzeArabicLuxeQuality(deck);
+  const items = [
+    ["Story", storyScore, expectedLayouts.length ? `${expectedCount}/${expectedLayouts.length} ${deck.archetype.replace("-", " ")} sections present.` : "Narrative has opening, proof, operating plan, and close."],
+    ["Design", designScore, qaIssues.length ? `${qaIssues.length} QA warning or issue${qaIssues.length === 1 ? "" : "s"} remain.` : "No overflow, contrast, hierarchy, or edge issues detected."],
+    ["Evidence", evidenceScore, evidenceCount ? `${evidenceCount} evidence point${evidenceCount === 1 ? "" : "s"}, ${sourceCount} source${sourceCount === 1 ? "" : "s"}, and ${chartCount} editable chart${chartCount === 1 ? "" : "s"} are mapped into the deck. Fact-check ${factScore}: ${factCheck?.status || "Not run"}.` : "Add evidence rows or source notes to ground metrics and claims."],
+    ["Delivery", deliveryScore, `${notesCount}/${deck.slides.length} slides include speaker notes.`],
+    ["Export", exportScore, "PPTX, PDF, project manifest, deck DNA, briefing, brand, evidence, charts, and notes are export-ready."]
+  ].map(([label, score, detail]) => ({ label, score, detail }));
+  if (arabicAudit.applies) {
+    items.push({ label: "Arabic RTL", score: arabicAudit.score, detail: arabicAudit.detail });
+  }
+  const overall = clampScore(items.reduce((sum, item) => sum + item.score, 0) / items.length);
+  const recommendations = items
+    .filter((item) => item.score < 85)
+    .map((item) => `${item.label}: ${item.detail}`);
+  if (arabicAudit.applies) recommendations.push(...arabicAudit.recommendations.map((item) => `Arabic RTL: ${item}`));
+  return {
+    overall,
+    status: overall >= 90 ? "Board-ready" : overall >= 80 ? "Client-ready" : overall >= 70 ? "Needs polish" : "Draft",
+    generatedAt: new Date().toISOString(),
+    items,
+    arabicAudit,
+    recommendations
+  };
+}
+
+function updateReview() {
+  updateFactCheck();
+  deck.review = analyzeDeck();
+  if (deck.review?.arabicAudit?.applies) {
+    deck.metadata.arabicBenchmarkScore = deck.review.arabicAudit.score;
+    deck.metadata.arabicBenchmarkStatus = deck.review.arabicAudit.status;
+  }
+  return deck.review;
+}
+
+function renderReview() {
+  const review = deck.review || updateReview();
+  const cards = review.items.map((item) => `
+    <article class="review-card">
+      <div class="review-score">${item.score}</div>
+      <div>
+        <h3>${escapeHtml(item.label)}</h3>
+        <p>${escapeHtml(item.detail)}</p>
+      </div>
+    </article>
+  `).join("");
+  const recommendations = review.recommendations.length
+    ? `<p>${escapeHtml(review.recommendations.join(" "))}</p>`
+    : "<p>No major pre-export gaps detected.</p>";
+  $("reviewOutput").innerHTML = `
+    <section class="review-summary">
+      <strong>${review.overall}</strong>
+      ${escapeHtml(review.status)}
+      ${recommendations}
+    </section>
+    ${cards}
+  `;
+}
+
+function variantSummary(request) {
+  const text = request || "Board-ready alternate with tighter copy and stronger decision framing";
+  if (/data|metric|evidence|proof/i.test(text)) return "Data-forward variant with a stronger evidence signal.";
+  if (/visual|diagram|simple|less text/i.test(text)) return "More visual variant with tighter supporting copy.";
+  if (/executive|board|premium|investor|client/i.test(text)) return "Executive polish variant with cleaner hierarchy.";
+  return text;
+}
+
+function buildSlideVariant(source, request) {
+  const variant = cloneDeck(source);
+  const lower = String(request || "").toLowerCase();
+  variant.variantOf = source.id;
+  variant.variantCreatedAt = new Date().toISOString();
+  variant.speakerNotes = `${variant.speakerNotes || variant.brief || ""} Variant note: compare this version for sharper narrative fit before applying.`.trim();
+  variant.elements.forEach((element) => {
+    if (element.type === "shape" && element.fill === "#ffffff" && /executive|board|premium|client|investor|proof|data|metric/.test(lower)) {
+      element.fill = "#f8fafc";
+    }
+    if (element.type !== "text") return;
+    if (!element.bold) {
+      element.size = Math.max(16, element.size - 1);
+    }
+    if (/visual|simple|less text|concise|short/.test(lower) && !element.bold && (element.text || "").length > 90) {
+      element.text = `${element.text.split(/\s+/).slice(0, 14).join(" ")}...`;
+    }
+  });
+  const title = variant.elements.find((element) => element.type === "text" && element.bold && element.size >= 48);
+  if (title && /short|concise|simple/.test(lower)) {
+    title.text = title.text.split(/\s+/).slice(0, 5).join(" ");
+  }
+  if (/data|metric|evidence|proof/.test(lower) || (!lower && deck.evidence?.length)) {
+    const evidence = deck.evidence?.[0];
+    const metric = evidence?.metric || "Key";
+    const label = evidence?.label || "decision signal";
+    variant.elements.push(el("shape", 1280, 174, 370, 120, { fill: deck.theme.accent, stroke: deck.theme.accent, radius: 18 }));
+    variant.elements.push(text(deck.theme, 1310, 200, 310, 48, metric, metricSize(metric, 38), deck.theme.white, { bold: true, align: "center" }));
+    variant.elements.push(text(deck.theme, 1310, 250, 310, 28, label, 18, deck.theme.white, { align: "center" }));
+  } else {
+    variant.elements.push(el("shape", 126, 928, 320, 8, { fill: deck.theme.accent, stroke: deck.theme.accent, radius: 4 }));
+  }
+  return variant;
+}
+
+function createSlideVariant() {
+  if (!deck) return;
+  const source = deck.slides[selected];
+  const request = $("editRequest").value.trim();
+  const variantSlide = buildSlideVariant(source, request);
+  const item = {
+    id: `variant-${Date.now()}`,
+    slideIndex: selected,
+    slideTitle: source.title || source.layout,
+    createdAt: new Date().toISOString(),
+    instruction: request || "Board-ready alternate",
+    summary: variantSummary(request),
+    slide: variantSlide
+  };
+  deck.variants = [item, ...(deck.variants || [])].slice(0, 24);
+  deck.metadata.variantCount = deck.variants.length;
+  deck.agentLog = [
+    ...(deck.agentLog || []),
+    {
+      index: (deck.agentLog || []).length + 1,
+      title: "Create variant",
+      detail: `Created an alternate version of slide ${selected + 1}: ${item.summary}`
+    }
+  ];
+  $("editRequest").value = "";
+  activeTab = "variants";
+  updateReview();
+  render();
+}
+
+function applyVariant(id) {
+  const variant = (deck.variants || []).find((item) => item.id === id);
+  if (!variant) return;
+  deck.slides[variant.slideIndex] = cloneDeck(variant.slide);
+  selected = variant.slideIndex;
+  deck.metadata.variantAppliedAt = new Date().toISOString();
+  runQA(false);
+  updateReview();
+  activeTab = "preview";
+  render();
+}
+
+function deleteVariant(id) {
+  deck.variants = (deck.variants || []).filter((item) => item.id !== id);
+  deck.metadata.variantCount = deck.variants.length;
+  activeTab = "variants";
+  render();
+}
+
+function renderVariants() {
+  const variants = (deck.variants || []).filter((item) => item.slideIndex === selected);
+  if (!variants.length) {
+    $("variantsOutput").innerHTML = '<article class="variant-card"><div class="variant-preview"></div><div><h3>No variants for this slide</h3><p>Create a slide variant from the edit panel to compare alternate copy, hierarchy, or evidence emphasis.</p></div></article>';
+    return;
+  }
+  $("variantsOutput").innerHTML = variants.map((item) => `
+    <article class="variant-card">
+      <div class="variant-preview" data-variant-id="${item.id}"></div>
+      <div>
+        <h3>${escapeHtml(item.slideTitle)} variant</h3>
+        <p>${escapeHtml(item.summary)}<br>${escapeHtml(new Date(item.createdAt).toLocaleString())}</p>
+        <div class="variant-actions">
+          <button data-variant-action="apply" data-variant-id="${item.id}">Apply Variant</button>
+          <button data-variant-action="delete" data-variant-id="${item.id}">Delete</button>
+        </div>
+      </div>
+    </article>
+  `).join("");
+  $("variantsOutput").querySelectorAll(".variant-preview").forEach((preview) => {
+    const item = variants.find((variant) => variant.id === preview.dataset.variantId);
+    if (!item) return;
+    const mini = document.createElement("div");
+    mini.className = "mini";
+    mini.style.width = `${W}px`;
+    mini.style.height = `${H}px`;
+    mini.style.transform = "scale(0.1146)";
+    renderSlideInto(mini, item.slide, false);
+    preview.appendChild(mini);
+  });
+}
+
+function contrast(hexA, hexB) {
+  const toRgb = (hex) => {
+    const v = (hex || "#000000").replace("#", "");
+    return [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16) || 0);
+  };
+  const lum = (rgb) => {
+    const f = (c) => {
+      c /= 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * f(rgb[0]) + 0.7152 * f(rgb[1]) + 0.0722 * f(rgb[2]);
+  };
+  const l1 = lum(toRgb(hexA));
+  const l2 = lum(toRgb(hexB));
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+function hasArabicMojibake(value) {
+  const textValue = String(value || "");
+  if (!textValue) return false;
+  const latin1Noise = /[§©®±µ¶¸¹º»¼½¾¿]/.test(textValue) && countArabicChars(textValue) >= 2;
+  const utfNoise = /(?:[ØÙÃÂ][\u0080-\u00FF]){2,}/.test(textValue);
+  const cp1256Noise = /(?:ط[§©®±µ¶·¸¹º»¼½¾¿]|ظ[€پ‚ƒ„…†‡ˆ‰ٹ‹Œچڈژ‘’“”•–—ک›œ‌‍‏])/u.test(textValue);
+  return latin1Noise || utfNoise || cp1256Noise;
+}
+
+function isArabicDeckFont(font) {
+  return /tajawal|cairo|amiri|dubai|noto kufi arabic|noto sans arabic|ibm plex sans arabic|segoe ui/i.test(String(font || ""));
+}
+
+function analyzeArabicTextGate(deckInput = deck) {
+  const slides = deckInput?.slides || [];
+  const theme = deckInput?.theme || {};
+  const textElements = slides.flatMap((slide, slideIndex) => (
+    (slide.elements || [])
+      .map((element, elementIndex) => ({ ...element, slideIndex, elementIndex }))
+      .filter((element) => element.type === "text")
+  ));
+  const arabicText = textElements.filter((element) => countArabicChars(element.text) >= 2);
+  const suspectEncodingText = textElements.filter((element) => hasArabicMojibake(element.text));
+  const applies = !!theme.rtlPremium || arabicText.length >= 3 || suspectEncodingText.length > 0;
+  if (!applies) {
+    return { applies: false, issues: [], warnings: [], score: 100, signals: [] };
+  }
+
+  const corrupted = suspectEncodingText;
+  const missingRtl = arabicText.filter((element) => !element.rtl || !["right", "center"].includes(String(element.align || "").toLowerCase()));
+  const weakFonts = arabicText.filter((element) => !isArabicDeckFont(element.font));
+  const total = Math.max(1, arabicText.length);
+  const score = clampScore(
+    100
+    - corrupted.length * 24
+    - Math.round((missingRtl.length / total) * 28)
+    - Math.round((weakFonts.length / total) * 18)
+  );
+  const issues = corrupted.map((element) => ({
+    level: "issue",
+    slide: element.slideIndex + 1,
+    message: `Arabic text appears encoding-corrupted: "${String(element.text || "").slice(0, 54)}"`,
+    fix: null
+  }));
+  const warnings = [];
+  missingRtl.slice(0, 8).forEach((element) => {
+    warnings.push({
+      level: "warning",
+      slide: element.slideIndex + 1,
+      message: `Arabic text should be RTL and right-aligned: "${String(element.text || "").slice(0, 54)}"`,
+      fix: () => {
+        const original = slides[element.slideIndex]?.elements?.[element.elementIndex];
+        if (original) {
+          original.rtl = true;
+          original.align = "right";
+        }
+      }
+    });
+  });
+  weakFonts.slice(0, 8).forEach((element) => {
+    warnings.push({
+      level: "warning",
+      slide: element.slideIndex + 1,
+      message: `Arabic text uses a non-Arabic deck font: "${String(element.text || "").slice(0, 54)}"`,
+      fix: () => {
+        const original = slides[element.slideIndex]?.elements?.[element.elementIndex];
+        if (original) original.font = theme.fontArabic || "Tajawal";
+      }
+    });
+  });
+  return {
+    applies: true,
+    score,
+    issues,
+    warnings,
+    signals: [
+      `${arabicText.length} Arabic text objects`,
+      `${corrupted.length} encoding risk${corrupted.length === 1 ? "" : "s"}`,
+      `${missingRtl.length} RTL/alignment warning${missingRtl.length === 1 ? "" : "s"}`,
+      `${weakFonts.length} Arabic font warning${weakFonts.length === 1 ? "" : "s"}`
+    ]
+  };
+}
+
+function runQA(shouldRender = true) {
+  if (!deck) return [];
+  const results = [];
+  deck.slides.forEach((slide, slideIndex) => {
+    slide.elements.forEach((element) => {
+      if (element.type !== "text") return;
+      const capacity = Math.max(24, Math.floor((element.w * element.h) / (element.size * element.size * 0.62)));
+      const textLength = (element.text || "").replace(/\s+/g, " ").length;
+      if (textLength > capacity) {
+        results.push({
+          level: "issue",
+          slide: slideIndex + 1,
+          message: `Text may overflow: "${(element.text || "").slice(0, 54)}"`,
+          fix: () => { element.size = Math.max(18, Math.round(element.size * 0.88)); element.h += 24; }
+        });
+      }
+      if (element.x < 40 || element.y < 40 || element.x + element.w > W - 30 || element.y + element.h > H - 30) {
+        results.push({
+          level: "warning",
+          slide: slideIndex + 1,
+          message: `Object is close to slide edge: "${(element.text || "").slice(0, 54)}"`,
+          fix: () => {
+            element.x = Math.max(70, Math.min(element.x, W - element.w - 70));
+            element.y = Math.max(70, Math.min(element.y, H - element.h - 70));
+          }
+        });
+      }
+    });
+    slide.elements.forEach((element) => {
+      if (element.type !== "image") return;
+      const src = String(element.src || "");
+      if (!src.startsWith("data:image/") && !/^https?:\/\//i.test(src)) {
+        results.push({
+          level: "issue",
+          slide: slideIndex + 1,
+          message: `Image object is missing an embedded or reachable source in ${slide.filename}.`,
+          fix: null
+        });
+      }
+      if (Number(element.w) < 40 || Number(element.h) < 40) {
+        results.push({
+          level: "issue",
+          slide: slideIndex + 1,
+          message: `Image object is too small to render reliably in ${slide.filename}.`,
+          fix: null
+        });
+      }
+      if (!["cover", "contain", "fill", "scale-down", "none"].includes(String(element.fit || "cover"))) {
+        results.push({
+          level: "warning",
+          slide: slideIndex + 1,
+          message: `Image object has an unsupported fit mode in ${slide.filename}.`,
+          fix: () => { element.fit = "cover"; }
+        });
+      }
+    });
+    const title = slide.elements.find((element) => element.type === "text" && element.bold && element.size >= 48);
+    if (!title) {
+      results.push({ level: "warning", slide: slideIndex + 1, message: "Slide has no clear title hierarchy.", fix: null });
+    }
+  });
+  const arabicAudit = analyzeArabicLuxeQuality(deck);
+  if (arabicAudit.applies && arabicAudit.score < 82) {
+    results.push({
+      level: arabicAudit.score < 70 ? "issue" : "warning",
+      slide: "All",
+      message: `Arabic premium benchmark below target: ${arabicAudit.detail}`,
+      fix: null
+    });
+  }
+  const arabicTextGate = analyzeArabicTextGate(deck);
+  if (arabicTextGate.applies) {
+    results.push(...arabicTextGate.issues, ...arabicTextGate.warnings);
+    deck.metadata = {
+      ...(deck.metadata || {}),
+      arabicTextGateScore: arabicTextGate.score,
+      arabicTextGateSignals: arabicTextGate.signals
+    };
+  }
+  results.push(...measureRenderedQA());
+  deck.qa = results.map(({ level, slide, message }) => ({ level, slide, message }));
+  if (!results.length) {
+    deck.qa = [{ level: "pass", slide: "All", message: "No text overflow, edge, contrast, or hierarchy issues detected." }];
+  }
+  if (shouldRender) render();
+  return results;
+}
+
+function bgAt(slide, x, y) {
+  let fill = "#ffffff";
+  slide.elements.forEach((element) => {
+    if (!["shape", "imageBlock", "image"].includes(element.type)) return;
+    if (x >= element.x && x <= element.x + element.w && y >= element.y && y <= element.y + element.h) {
+      fill = element.fill || fill;
+    }
+  });
+  return fill;
+}
+
+function measureRenderedQA() {
+  if (!document.body || !deck) return [];
+  const results = [];
+  const rig = document.createElement("div");
+  Object.assign(rig.style, {
+    position: "absolute",
+    left: "-10000px",
+    top: "0",
+    width: `${W}px`,
+    height: `${H}px`,
+    visibility: "hidden",
+    pointerEvents: "none",
+    overflow: "hidden"
+  });
+  document.body.appendChild(rig);
+  deck.slides.forEach((slide, slideIndex) => {
+    renderSlideInto(rig, slide, false);
+    rig.querySelectorAll(".text-object").forEach((node) => {
+      const elementIndex = Number(node.dataset.elementIndex);
+      const element = slide.elements[elementIndex];
+      const overflowX = node.scrollWidth > node.clientWidth + 1;
+      const overflowY = node.scrollHeight > node.clientHeight + 1;
+      if (overflowX || overflowY) {
+        results.push({
+          level: "issue",
+          slide: slideIndex + 1,
+          message: `Rendered text overflow in ${slide.filename}: "${(element.text || "").slice(0, 54)}"`,
+          fix: () => {
+            element.size = Math.max(16, Math.round(element.size * 0.88));
+            element.h = Math.min(H - element.y - 60, element.h + 34);
+          }
+        });
+      }
+      const bg = bgAt(slide, element.x + element.w / 2, element.y + element.h / 2);
+      if (contrast(element.fill, bg) < 2.8) {
+        results.push({
+          level: "warning",
+          slide: slideIndex + 1,
+          message: `Low contrast text in ${slide.filename}: "${(element.text || "").slice(0, 54)}"`,
+          fix: () => {
+            element.fill = contrast("#ffffff", bg) > contrast("#111827", bg) ? "#ffffff" : "#111827";
+          }
+        });
+      }
+    });
+  });
+  rig.remove();
+  return results;
+}
+
+function renderQA() {
+  const items = deck.qa || [];
+  $("qaOutput").innerHTML = items.map((item) => `<div class="qa-card ${item.level}"><strong>${item.level.toUpperCase()} - Slide ${item.slide}</strong><br>${escapeHtml(item.message)}</div>`).join("");
+}
+
+function repairDeckQA(passes = 3) {
+  let results = [];
+  for (let i = 0; i < passes; i += 1) {
+    results = runQA(false);
+    const fixable = results.filter((item) => item.fix);
+    if (!fixable.length) break;
+    fixable.forEach((item) => item.fix());
+  }
+  return runQA(false);
+}
+
+function applyEdit() {
+  const request = $("editRequest").value.trim().toLowerCase();
+  if (!request || !deck) return;
+  const slide = deck.slides[selected];
+  const title = slide.elements.find((element) => element.type === "text" && element.bold && element.size >= 48);
+  if (/short|concise|reduce|brief/.test(request) && title) {
+    title.text = title.text.split(/\s+/).slice(0, 6).join(" ");
+    title.size = Math.max(44, title.size - 8);
+  }
+  if (/executive|premium|board/.test(request)) {
+    slide.elements.forEach((element) => {
+      if (element.type === "shape" && element.fill === "#ffffff") element.fill = "#f8fafc";
+      if (element.type === "text" && !element.bold) element.size = Math.max(18, element.size - 2);
+    });
+  }
+  if (/metric|number|data/.test(request)) {
+    slide.elements.push(text(deck.theme, 1280, 188, 330, 86, "3x", 70, deck.theme.accent, { bold: true, align: "center" }));
+    slide.elements.push(text(deck.theme, 1230, 280, 430, 52, "clearer decision signal", 24, deck.theme.muted, { align: "center" }));
+  }
+  if (/arabic|rtl/.test(request)) {
+    slide.elements.filter((element) => element.type === "text").forEach((element) => {
+      element.rtl = true;
+      element.align = "right";
+      element.font = "Arial";
+    });
+  }
+  $("editRequest").value = "";
+  runQA(false);
+  updateReview();
+  render();
+}
+
+function autoFix() {
+  repairDeckQA(3);
+  updateReview();
+  render();
+}
+
+function polishDeck() {
+  if (!deck) return;
+  autoFix();
+  deck.slides.forEach((slide, index) => {
+    if (!(slide.speakerNotes || "").includes("Delivery cue:")) {
+      slide.speakerNotes = `${slide.speakerNotes || slide.brief || ""} Delivery cue: open with the slide headline, name the evidence, and close with the decision implication.`.trim();
+    }
+    slide.reviewStatus = "polished";
+    slide.reviewOrder = index + 1;
+  });
+  deck.metadata.polishedAt = new Date().toISOString();
+  deck.agentLog = [
+    ...(deck.agentLog || []),
+    {
+      index: (deck.agentLog || []).length + 1,
+      title: "Polish deck",
+      detail: "Applied QA fixes, strengthened presenter notes, and refreshed the pre-export review."
+    }
+  ];
+  runQA(false);
+  updateReview();
+  activeTab = "review";
+  render();
+}
+
+async function download(endpoint, filename) {
+  if (!deck) return;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ deck })
+  });
+  if (!response.ok) {
+    alert(await response.text());
+    return;
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function render() {
+  if (!deck) return;
+  window.DeckForgeDeck = deck;
+  $("deckTitle").textContent = deck.metadata.title;
+  renderStrip();
+  renderSlideInto($("slideCanvas"), deck.slides[selected]);
+  scaleCanvas();
+  renderObjectInspector();
+  renderTemplates();
+  renderCode();
+  renderFiles();
+  renderAgent();
+  renderReferenceAnalysis();
+  renderDeckDNA();
+  renderBriefing();
+  renderOutline();
+  renderStoryboard();
+  renderPlan();
+  renderEvidence();
+  renderSources();
+  renderDocuments();
+  renderReferences();
+  renderCharts();
+  renderFactCheck();
+  renderReview();
+  renderVariants();
+  renderQA();
+  document.querySelectorAll(".pane").forEach((pane) => pane.classList.remove("active"));
+  $(`${activeTab}Pane`).classList.add("active");
+  document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === activeTab));
+}
+
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    activeTab = tab.dataset.tab;
+    render();
+  });
+});
+
+$("outlineBtn").addEventListener("click", draftOutline);
+$("generateBtn").addEventListener("click", () => generateDeck());
+$("qaBtn").addEventListener("click", () => { activeTab = "qa"; runQA(true); });
+$("editBtn").addEventListener("click", applyEdit);
+$("fixBtn").addEventListener("click", autoFix);
+$("variantBtn").addEventListener("click", createSlideVariant);
+$("polishBtn").addEventListener("click", polishDeck);
+$("savePointBtn").addEventListener("click", savePoint);
+$("restorePointBtn").addEventListener("click", restoreSavePoint);
+$("deletePointBtn").addEventListener("click", deleteSavePoint);
+$("saveTemplateBtn").addEventListener("click", saveTemplate);
+$("applyTemplateBtn").addEventListener("click", applySelectedTemplate);
+$("deleteTemplateBtn").addEventListener("click", deleteSelectedTemplate);
+$("templateSelect").addEventListener("change", () => renderTemplates());
+$("documentFiles").addEventListener("change", importDocumentFiles);
+$("clearDocumentsBtn").addEventListener("click", clearDocumentBrief);
+$("analyzeReferenceBtn").addEventListener("click", analyzeReferenceDeck);
+$("applyReferenceBtn").addEventListener("click", applyReferenceStyle);
+$("importReferenceBtn").addEventListener("click", importReferenceDeck);
+$("useReferenceOutlineBtn").addEventListener("click", useReferenceOutline);
+$("sampleReferenceBtn").addEventListener("click", loadSampleReferenceStyle);
+$("referenceDeckFile").addEventListener("change", analyzeReferenceDeck);
+$("presentBtn").addEventListener("click", openPresenter);
+$("presenterClose").addEventListener("click", closePresenter);
+$("presenterPrev").addEventListener("click", () => movePresenter(-1));
+$("presenterNext").addEventListener("click", () => movePresenter(1));
+$("pdfBtn").addEventListener("click", () => download("/api/export/pdf", `${deck.metadata.slug}.pdf`));
+$("pptxBtn").addEventListener("click", () => download("/api/export/pptx", `${deck.metadata.slug}.pptx`));
+$("projectBtn").addEventListener("click", () => download("/api/export/project", `${deck.metadata.slug}.slides.zip`));
+$("slideCanvas").addEventListener("click", (event) => {
+  const object = event.target.closest("[data-element-index]");
+  if (!object || !$("slideCanvas").contains(object)) return;
+  selectObject(Number(object.dataset.elementIndex), true);
+});
+$("objectOutput").addEventListener("input", (event) => {
+  const control = event.target.closest("[data-object-field]");
+  if (!control) return;
+  updateObjectField(control.dataset.objectField, control.value, false);
+});
+$("objectOutput").addEventListener("change", (event) => {
+  const control = event.target.closest("[data-object-field]");
+  if (!control) return;
+  const value = control.dataset.objectField === "bold" ? control.value === "true" : control.value;
+  updateObjectField(control.dataset.objectField, value);
+});
+$("objectOutput").addEventListener("focusout", (event) => {
+  const control = event.target.closest("[data-object-field]");
+  if (!control) return;
+  const value = control.dataset.objectField === "bold" ? control.value === "true" : control.value;
+  updateObjectField(control.dataset.objectField, value);
+});
+$("objectOutput").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-object-action]");
+  if (!button) return;
+  if (button.dataset.objectAction === "apply") commitObjectInspector();
+  if (button.dataset.objectAction === "addText") addObject("text");
+  if (button.dataset.objectAction === "addShape") addObject("shape");
+  if (button.dataset.objectAction === "duplicate") duplicateObject();
+  if (button.dataset.objectAction === "delete") deleteObject();
+});
+$("templateOutput").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-template-action]");
+  if (!button) return;
+  const id = button.dataset.templateId;
+  if ($("templateSelect")) $("templateSelect").value = id;
+  if (button.dataset.templateAction === "select") renderTemplates();
+  if (button.dataset.templateAction === "apply") applySelectedTemplate();
+  if (button.dataset.templateAction === "delete") deleteSelectedTemplate();
+});
+$("referenceOutput").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-reference-action]");
+  if (!button) return;
+  if (button.dataset.referenceAction === "import") importReferenceDeck();
+  if (button.dataset.referenceAction === "apply") applyReferenceStyle();
+  if (button.dataset.referenceAction === "outline") useReferenceOutline();
+});
+$("outlineOutput").addEventListener("input", (event) => {
+  const control = event.target.closest("[data-outline-action]");
+  if (!control) return;
+  const index = Number(control.dataset.outlineIndex);
+  if (control.dataset.outlineAction === "title") setOutlineField(index, "title", control.value);
+  if (control.dataset.outlineAction === "brief") setOutlineField(index, "brief", control.value);
+  if (control.dataset.outlineAction === "notes") setOutlineField(index, "speakerNotes", control.value);
+});
+$("outlineOutput").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-outline-action]");
+  if (!button) return;
+  const action = button.dataset.outlineAction;
+  const index = Number(button.dataset.outlineIndex);
+  if (action === "draft") draftOutline();
+  if (action === "build") buildDeckFromOutline();
+  if (action === "up") moveOutlineItem(index, -1);
+  if (action === "down") moveOutlineItem(index, 1);
+});
+$("storyboardOutput").addEventListener("change", (event) => {
+  const control = event.target.closest("[data-story-action]");
+  if (!control) return;
+  const index = Number(control.dataset.storyIndex);
+  if (control.dataset.storyAction === "title") setSlideTitle(index, control.value);
+  if (control.dataset.storyAction === "notes") setSlideNotes(index, control.value);
+});
+$("storyboardOutput").addEventListener("input", (event) => {
+  const control = event.target.closest("[data-story-action]");
+  if (!control) return;
+  const index = Number(control.dataset.storyIndex);
+  if (control.dataset.storyAction === "title") setSlideTitle(index, control.value, false);
+  if (control.dataset.storyAction === "notes") setSlideNotes(index, control.value, false);
+});
+$("storyboardOutput").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-story-action]");
+  if (!button) return;
+  const index = Number(button.dataset.storyIndex);
+  if (button.dataset.storyAction === "up") moveSlide(index, -1);
+  if (button.dataset.storyAction === "down") moveSlide(index, 1);
+});
+$("variantsOutput").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-variant-action]");
+  if (!button) return;
+  const id = button.dataset.variantId;
+  if (button.dataset.variantAction === "apply") applyVariant(id);
+  if (button.dataset.variantAction === "delete") deleteVariant(id);
+});
+window.addEventListener("resize", () => {
+  scaleCanvas();
+  scalePresenter();
+});
+document.addEventListener("keydown", (event) => {
+  if (!$("presenterOverlay").classList.contains("active")) return;
+  if (event.key === "Escape") closePresenter();
+  if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") movePresenter(1);
+  if (event.key === "ArrowLeft" || event.key === "PageUp") movePresenter(-1);
+});
+
+window.DeckForgeInternals = {
+  buildDeckDNA,
+  synthesizeReferenceTheme,
+  analyzeArabicLuxeQuality,
+  referenceOutlineItems,
+  useReferenceOutline,
+  paletteColors,
+  applyReferenceStyle
+};
+
+generateDeck();
+refreshSavePointSelect();
+refreshTemplateSelect();
