@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.log
+server*.out
+server*.err
+outputs/
+jordan-argentina-preview/
