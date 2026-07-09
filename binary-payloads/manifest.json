@@ -1,0 +1,18 @@
+{
+  "format": "deckforge-base64-parts-v1",
+  "chunk_chars": 120000,
+  "files": [
+    {
+      "name": "jordan-argentina-3slides.pptx",
+      "parts": 6,
+      "bytes": 479912,
+      "sha256": "ae01c384e0d3082fdcf471c08db8dce0df2c252aa8492d64fc8b8ebcb708e4b6"
+    },
+    {
+      "name": "jordan-argentina-3slides.slides.zip",
+      "parts": 6,
+      "bytes": 480822,
+      "sha256": "0bc939a3af5a5e02fe323eef1bc586090a6ed4ff0c949955c23ed4f3eec59d89"
+    }
+  ]
+}
