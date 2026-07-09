@@ -1,0 +1,2155 @@
+const W = 1920;
+const H = 1080;
+
+const themes = {
+  executive: {
+    name: "Executive Navy",
+    bg: "#0b1e3f",
+    paper: "#f7f3ea",
+    ink: "#0f172a",
+    muted: "#667085",
+    accent: "#9a6a16",
+    accent2: "#0f766e",
+    white: "#ffffff",
+    danger: "#b42318"
+  },
+  editorial: {
+    name: "Editorial White",
+    bg: "#ffffff",
+    paper: "#f6f7fb",
+    ink: "#1d2939",
+    muted: "#667085",
+    accent: "#9f1d35",
+    accent2: "#2e90fa",
+    white: "#ffffff",
+    danger: "#b42318"
+  },
+  venture: {
+    name: "Venture Dark",
+    bg: "#111827",
+    paper: "#edf7f3",
+    ink: "#07111f",
+    muted: "#475467",
+    accent: "#0f766e",
+    accent2: "#b45309",
+    white: "#ffffff",
+    danger: "#f97066"
+  },
+  arabicLuxe: {
+    name: "Arabic Luxe RTL",
+    bg: "#0A2540",
+    paper: "#FFFFFF",
+    ink: "#0A2540",
+    muted: "#475569",
+    accent: "#C9A961",
+    accent2: "#143A6B",
+    white: "#FFFFFF",
+    danger: "#b42318",
+    rtlPremium: true,
+    fontArabic: "Tajawal",
+    fontLatin: "Playfair Display"
+  },
+  arabicInvestor: {
+    name: "Arabic Investor Dark",
+    bg: "#0A0A0F",
+    paper: "#0A0A0F",
+    ink: "#F5F1E8",
+    muted: "#A8A29A",
+    accent: "#D4A574",
+    accent2: "#E8C89A",
+    white: "#F5F1E8",
+    danger: "#f97066",
+    rtlPremium: true,
+    investorDark: true,
+    fontArabic: "Cairo",
+    fontBody: "Tajawal",
+    fontLatin: "Amiri"
+  },
+  arabicCinematic: {
+    name: "Arabic Cinematic Story",
+    bg: "#0A0A0A",
+    paper: "#0A0A0A",
+    ink: "#F5F1E8",
+    muted: "#8A8578",
+    accent: "#C9A961",
+    accent2: "#E8C878",
+    white: "#F5F1E8",
+    danger: "#f97066",
+    rtlPremium: true,
+    cinematicStory: true,
+    fontArabic: "Amiri",
+    fontBody: "Tajawal",
+    fontLatin: "Playfair Display",
+    fontScript: "Cormorant Garamond"
+  }
+};
+
+const layouts = [
+  "cover",
+  "agenda",
+  "why",
+  "benefits",
+  "metrics",
+  "pillars",
+  "roadmap",
+  "habits",
+  "mistakes",
+  "closing",
+  "case",
+  "operating-model",
+  "investment",
+  "appendix"
+];
+
+const investorLayouts = [
+  "cover",
+  "problem",
+  "solution",
+  "market",
+  "product",
+  "business-model",
+  "traction",
+  "gtm",
+  "financials",
+  "ask"
+];
+
+const arabicInvestorLayouts = [
+  "cover",
+  "vision",
+  "problem",
+  "solution",
+  "how-it-works",
+  "traction",
+  "market",
+  "team",
+  "funding",
+  "closing"
+];
+
+const arabicCinematicLayouts = [
+  "cover",
+  "origin",
+  "timeline",
+  "scale",
+  "financial-power",
+  "acquisitions",
+  "transformation",
+  "culture",
+  "lessons",
+  "closing"
+];
+
+const salesLayouts = [
+  "cover",
+  "client-context",
+  "buyer-pain",
+  "proposed-solution",
+  "differentiators",
+  "proof",
+  "scope",
+  "implementation",
+  "commercial-case",
+  "next-steps"
+];
+
+const trainingLayouts = [
+  "cover",
+  "learning-outcomes",
+  "learner-context",
+  "core-concepts",
+  "practice-loop",
+  "example-walkthrough",
+  "checklist",
+  "assessment",
+  "rollout-plan",
+  "closing"
+];
+
+let deck = null;
+let selected = 0;
+let selectedObject = null;
+let presenterIndex = 0;
+let activeTab = "preview";
+let outlineDraft = [];
+let outlineApprovedAt = "";
+let referenceAnalysis = null;
+
+const SAVEPOINT_KEY = "deckforge.savePoints.v1";
+const TEMPLATE_KEY = "deckforge.templates.v1";
+
+const $ = (id) => document.getElementById(id);
+
+function hasArabic(text) {
+  return /[\u0600-\u06ff]/.test(text);
+}
+
+function cloneDeck(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function readWorkspaceSettings() {
+  return {
+    prompt: $("prompt")?.value || "",
+    slideCount: $("slideCount")?.value || String(deck?.slides?.length || 10),
+    language: $("language")?.value || "auto",
+    theme: $("theme")?.value || "executive",
+    density: $("density")?.value || "balanced",
+    brandName: $("brandName")?.value || "",
+    audience: $("audienceInput")?.value || "",
+    deckGoal: $("deckGoal")?.value || "Executive decision",
+    tone: $("tone")?.value || "Board-ready",
+    brandAccent: $("brandAccent")?.value || "#9a6a16",
+    templateId: $("templateSelect")?.value || "",
+    evidenceInput: $("evidenceInput")?.value || "",
+    sourceInput: $("sourceInput")?.value || "",
+    documentInput: $("documentInput")?.value || "",
+    referenceAnalysis: referenceAnalysis ? cloneDeck(referenceAnalysis) : null
+  };
+}
+
+function applyWorkspaceSettings(settings = {}) {
+  if (settings.prompt !== undefined) $("prompt").value = settings.prompt;
+  if (settings.slideCount !== undefined) $("slideCount").value = settings.slideCount;
+  if (settings.language !== undefined) $("language").value = settings.language;
+  if (settings.theme !== undefined) $("theme").value = settings.theme;
+  if (settings.density !== undefined) $("density").value = settings.density;
+  if (settings.brandName !== undefined) $("brandName").value = settings.brandName;
+  if (settings.audience !== undefined) $("audienceInput").value = settings.audience;
+  if (settings.deckGoal !== undefined) $("deckGoal").value = settings.deckGoal;
+  if (settings.tone !== undefined) $("tone").value = settings.tone;
+  if (settings.brandAccent !== undefined) $("brandAccent").value = settings.brandAccent;
+  if (settings.templateId !== undefined && $("templateSelect")) $("templateSelect").value = settings.templateId;
+  if (settings.evidenceInput !== undefined) $("evidenceInput").value = settings.evidenceInput;
+  if (settings.sourceInput !== undefined) $("sourceInput").value = settings.sourceInput;
+  if (settings.documentInput !== undefined && $("documentInput")) $("documentInput").value = settings.documentInput;
+  if (settings.referenceAnalysis !== undefined) referenceAnalysis = settings.referenceAnalysis ? cloneDeck(settings.referenceAnalysis) : null;
+}
+
+function readTextFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("Unable to read file."));
+    reader.readAsText(file);
+  });
+}
+
+async function importDocumentFiles(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  const blocks = [];
+  for (const file of files.slice(0, 8)) {
+    const textValue = await readTextFile(file);
+    const trimmed = textValue.replace(/\u0000/g, " ").trim();
+    if (!trimmed) continue;
+    const sizeKb = Math.max(1, Math.round(file.size / 1024));
+    blocks.push(`--- Document: ${file.name} (${sizeKb} KB) ---\n${trimmed.slice(0, 12000)}`);
+  }
+  const input = $("documentInput");
+  const existing = input.value.trim();
+  input.value = [existing, blocks.join("\n\n")].filter(Boolean).join("\n\n");
+  event.target.value = "";
+}
+
+function clearDocumentBrief() {
+  if ($("documentInput")) $("documentInput").value = "";
+  if ($("documentFiles")) $("documentFiles").value = "";
+}
+
+function setReferenceStatus(message, tone = "") {
+  const status = $("referenceDeckStatus");
+  if (!status) return;
+  status.textContent = message || "";
+  status.dataset.tone = tone;
+}
+
+async function analyzeReferenceDeck() {
+  const input = $("referenceDeckFile");
+  const file = input?.files?.[0];
+  if (!file) {
+    setReferenceStatus("Choose a PPTX, ZIP, or HTML deck first.", "warning");
+    return;
+  }
+  setReferenceStatus("Analyzing reference deck...", "working");
+  const payload = new FormData();
+  payload.append("file", file);
+  try {
+    const response = await fetch("/api/analyze/reference", { method: "POST", body: payload });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || "Reference analysis failed.");
+    }
+    referenceAnalysis = await response.json();
+    if (deck) {
+      deck.referenceAnalysis = cloneDeck(referenceAnalysis);
+      deck.metadata.referenceDeck = referenceAnalysis.fileName || "";
+      deck.metadata.referenceFingerprint = referenceAnalysis.fingerprint || "";
+    }
+    activeTab = "reference";
+    setReferenceStatus(referenceAnalysis.fingerprint || "Reference deck analyzed.", "ready");
+    render();
+  } catch (error) {
+    setReferenceStatus(error.message || "Reference analysis failed.", "error");
+  }
+}
+
+async function importReferenceDeck() {
+  const input = $("referenceDeckFile");
+  const file = input?.files?.[0];
+  if (!file) {
+    setReferenceStatus("Choose an HTML, ZIP, or .slides deck first.", "warning");
+    return;
+  }
+  setReferenceStatus("Opening editable deck...", "working");
+  const payload = new FormData();
+  payload.append("file", file);
+  try {
+    const response = await fetch("/api/import/deck", { method: "POST", body: payload });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || "Editable import failed.");
+    }
+    const result = await response.json();
+    if (!result.deck?.slides?.length) throw new Error("No editable slides were returned.");
+    deck = result.deck;
+    referenceAnalysis = result.referenceAnalysis || deck.referenceAnalysis || null;
+    deck.referenceAnalysis = referenceAnalysis ? cloneDeck(referenceAnalysis) : deck.referenceAnalysis;
+    deck.metadata = deck.metadata || {};
+    deck.metadata.referenceDeck = referenceAnalysis?.fileName || deck.metadata.referenceDeck || file.name;
+    deck.metadata.referenceFingerprint = referenceAnalysis?.fingerprint || deck.metadata.referenceFingerprint || "";
+    deck.metadata.slug = deck.metadata.slug || slugify(deck.metadata.title || file.name);
+    deck.deckDNA = buildDeckDNA(deck);
+    deck.metadata.styleFingerprint = deck.deckDNA?.fingerprint || deck.metadata.styleFingerprint || "";
+    deck.briefing = buildBriefing(deck);
+    window.DeckForgeDeck = deck;
+    outlineDraft = cloneDeck(deck.outline || []);
+    selected = 0;
+    selectedObject = null;
+    syncStoryboardState();
+    repairDeckQA(2);
+    updateFactCheck();
+    updateReview();
+    refreshSavePointSelect();
+    activeTab = "preview";
+    setReferenceStatus(`Opened ${deck.slides.length} editable slide${deck.slides.length === 1 ? "" : "s"} from ${file.name}.`, "ready");
+    render();
+  } catch (error) {
+    setReferenceStatus(error.message || "Editable import failed.", "error");
+  }
+}
+
+function applyReferenceStyle() {
+  if (!referenceAnalysis) {
+    setReferenceStatus("Analyze a reference deck first.", "warning");
+    return;
+  }
+  const base = deck?.theme || themes[$("theme")?.value] || themes.executive;
+  const referenceTheme = synthesizeReferenceTheme(base, referenceAnalysis);
+  if ($("brandAccent")) $("brandAccent").value = normalizeHex(referenceTheme.accent, $("brandAccent").value || "#9a6a16");
+  if (referenceAnalysis.density && $("density")) $("density").value = referenceAnalysis.density;
+  if ($("templateName") && !$("templateName").value.trim()) {
+    $("templateName").value = `${referenceAnalysis.fileName || "Reference"} Style`;
+  }
+  if (deck) {
+    deck.referenceAnalysis = cloneDeck(referenceAnalysis);
+    deck.metadata.referenceDeck = referenceAnalysis.fileName || "";
+    deck.metadata.referenceFingerprint = referenceAnalysis.fingerprint || "";
+    deck.metadata.referenceThemeName = referenceTheme.name;
+    applyThemeToDeck(
+      applyBrandToTheme(referenceTheme, deck.brand || {}),
+      "Apply reference style",
+      `Synthesized and applied theme from ${referenceAnalysis.fileName || "reference deck"}.`
+    );
+  }
+  setReferenceStatus("Reference style applied.", "ready");
+  activeTab = "reference";
+  render();
+}
+
+function referenceOutlineItems(analysis = referenceAnalysis) {
+  const rawItems = Array.isArray(analysis?.slideOutline) ? analysis.slideOutline : [];
+  const desired = Math.max(4, Math.min(14, rawItems.length || Number($("slideCount")?.value) || 10));
+  const fallbackLayouts = selectLayouts($("prompt")?.value || "", desired);
+  const knownLayouts = new Set([...layouts, ...investorLayouts, ...arabicInvestorLayouts, ...arabicCinematicLayouts, ...salesLayouts, ...trainingLayouts]);
+  const items = [];
+  for (let index = 0; index < desired; index += 1) {
+    const item = rawItems[index] || {};
+    const signals = (item.signals || []).map((signal) => String(signal || "").trim()).filter(Boolean).slice(0, 4);
+    const title = String(item.title || `Reference Slide ${index + 1}`).trim();
+    const hintedLayout = String(item.suggestedLayout || "").trim();
+    const layout = knownLayouts.has(hintedLayout) ? hintedLayout : (fallbackLayouts[index] || layouts[Math.min(index, layouts.length - 1)] || "agenda");
+    const brief = signals.length
+      ? signals.join(" / ")
+      : `Adapt the reference slide's role and pacing for ${title}.`;
+    items.push({
+      slide: index + 1,
+      layout,
+      role: item.visualRole || roleForLayout(layout),
+      title,
+      brief,
+      speakerNotes: `Use the reference structure as inspiration for slide ${index + 1}. ${signals.length ? `Reference cues: ${signals.join("; ")}.` : "Keep the message concise and presentation-ready."}`,
+      qaFocus: "Reference alignment, hierarchy, overflow, contrast, and clean export"
+    });
+  }
+  return normalizeOutlineItems(items, [], fallbackLayouts);
+}
+
+function useReferenceOutline() {
+  const analysis = deck?.referenceAnalysis || referenceAnalysis;
+  if (!analysis) {
+    setReferenceStatus("Analyze a reference deck first.", "warning");
+    return;
+  }
+  const items = referenceOutlineItems(analysis);
+  if (!items.length) {
+    setReferenceStatus("No reusable outline cues were found in this reference deck.", "warning");
+    return;
+  }
+  outlineDraft = items;
+  outlineApprovedAt = "";
+  if ($("slideCount")) $("slideCount").value = String(items.length);
+  if (deck) {
+    deck.referenceAnalysis = cloneDeck(analysis);
+    deck.outline = cloneDeck(items);
+    deck.metadata.referenceDeck = analysis.fileName || "";
+    deck.metadata.referenceFingerprint = analysis.fingerprint || "";
+    deck.metadata.referenceOutlineCount = items.length;
+    deck.metadata.outlineStatus = "reference-drafted";
+  }
+  setReferenceStatus(`${items.length}-slide reference outline ready.`, "ready");
+  activeTab = "outline";
+  render();
+}
+
+function loadSampleReferenceStyle() {
+  referenceAnalysis = {
+    fileName: "sample-reference-deck.pptx",
+    kind: "PPTX",
+    slideCount: 10,
+    fingerprint: "PPTX / 10 slides / visual / 5 colors / 3 media",
+    summary: "Sample reference deck using crisp white paper, dark executive ink, blue accent cues, and low-copy visual pacing.",
+    suggestedAccent: "#2e90fa",
+    density: "visual",
+    palette: [
+      { color: "#101828", role: "ink", count: 64 },
+      { color: "#ffffff", role: "paper", count: 58 },
+      { color: "#2e90fa", role: "accent candidate", count: 32 },
+      { color: "#12b76a", role: "accent candidate", count: 16 },
+      { color: "#667085", role: "neutral", count: 22 }
+    ],
+    typography: { textRunCount: 76, titleSize: 60, bodySize: 24, sizeRange: "14-60px" },
+    structure: { slideFiles: 10, notesFiles: 10, mediaFiles: 3, xmlFiles: 42, embeddedDeckForgeManifest: false },
+    assets: { mediaCount: 3 },
+    visualRecipe: {
+      available: true,
+      benchmark: "Professional",
+      density: "structured",
+      avgObjectsPerSlide: 12.4,
+      avgCardsPerSlide: 1.8,
+      rtlSlideRatio: 0,
+      chromeSlideRatio: 0.8,
+      maxTitleSize: 60,
+      topFonts: [{ font: "Aptos", count: 10 }],
+      tags: ["editorial-chrome", "card-grid", "large-title", "accent-lines"],
+      summary: "Professional reference with structured visual density, 12.4 objects/slide, card-grid rhythm, and editorial chrome coverage.",
+      recommendations: [
+        "Reuse page numbers, section labels, and footer/header chrome.",
+        "Use repeated cards or stat blocks rather than plain bullet lists.",
+        "Use thin accent rules as navigation and hierarchy cues."
+      ]
+    },
+    visualRecipeCount: 10,
+    slideOutline: [
+      { slide: 1, title: "Executive Summary", suggestedLayout: "cover", visualRole: "opening", signals: ["Frame the decision", "Name the business pressure"] },
+      { slide: 2, title: "Market Signal", suggestedLayout: "market", visualRole: "body", signals: ["Show why now", "Quantify urgency"] },
+      { slide: 3, title: "Buyer Pain", suggestedLayout: "problem", visualRole: "body", signals: ["Clarify friction", "Expose workflow cost"] },
+      { slide: 4, title: "Proposed System", suggestedLayout: "solution", visualRole: "body", signals: ["Introduce the solution", "Show operating logic"] },
+      { slide: 5, title: "Product Experience", suggestedLayout: "product", visualRole: "body", signals: ["Show the interface concept", "Highlight automation"] },
+      { slide: 6, title: "Proof Points", suggestedLayout: "proof", visualRole: "body", signals: ["Use metrics", "Cite evidence"] },
+      { slide: 7, title: "Rollout Plan", suggestedLayout: "roadmap", visualRole: "body", signals: ["Phase implementation", "Assign owners"] },
+      { slide: 8, title: "Commercial Case", suggestedLayout: "commercial-case", visualRole: "body", signals: ["Connect ROI", "Explain investment logic"] },
+      { slide: 9, title: "Risk Controls", suggestedLayout: "differentiators", visualRole: "body", signals: ["Address objections", "Show governance"] },
+      { slide: 10, title: "Next Decision", suggestedLayout: "next-steps", visualRole: "close", signals: ["Clarify ask", "Close with commitment"] }
+    ],
+    textSamples: ["Executive summary", "Market signal", "Operating model", "Proof points", "Next decision"],
+    reusablePrompt: "Create a concise executive deck with bright paper, dark ink, blue accent blocks, visual density, large titles around 60px, and a clear context -> proof -> plan -> decision storyline.",
+    takeaways: [
+      "Detected a visual presentation rhythm with strong title hierarchy and sparse body text.",
+      "Use blue as the primary action/accent color and keep white as the dominant slide surface.",
+      "Reserve media or chart space on proof and roadmap slides."
+    ]
+  };
+  if (deck) {
+    deck.referenceAnalysis = cloneDeck(referenceAnalysis);
+    deck.metadata.referenceDeck = referenceAnalysis.fileName;
+    deck.metadata.referenceFingerprint = referenceAnalysis.fingerprint;
+  }
+  setReferenceStatus(referenceAnalysis.fingerprint, "ready");
+  activeTab = "reference";
+  render();
+}
+
+function loadTemplates() {
+  try {
+    return JSON.parse(localStorage.getItem(TEMPLATE_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function storeTemplates(items) {
+  localStorage.setItem(TEMPLATE_KEY, JSON.stringify(items.slice(0, 30)));
+}
+
+function selectedTemplate() {
+  const id = $("templateSelect")?.value || "";
+  return loadTemplates().find((item) => item.id === id) || null;
+}
+
+function templateLabel(template) {
+  const brand = template.brand?.name || "Unbranded";
+  return `${template.name} - ${brand}`;
+}
+
+function refreshTemplateSelect() {
+  const select = $("templateSelect");
+  if (!select) return;
+  const value = select.value;
+  const templates = loadTemplates();
+  select.innerHTML = templates.length
+    ? `<option value="">No template</option>${templates.map((template) => `<option value="${template.id}">${escapeHtml(templateLabel(template))}</option>`).join("")}`
+    : '<option value="">No templates</option>';
+  if (templates.some((template) => template.id === value)) select.value = value;
+  renderTemplates();
+}
+
+function makeTemplateFromCurrent() {
+  const prompt = $("prompt")?.value || "";
+  const brand = readBrandBrief(prompt);
+  const themeKey = $("theme")?.value || "executive";
+  const baseTheme = deck?.theme || applyBrandToTheme(themes[themeKey] || themes.executive, brand);
+  const name = $("templateName")?.value.trim()
+    || deck?.metadata?.templateName
+    || brand.name
+    || deck?.metadata?.title
+    || baseTheme.name
+    || "DeckForge Template";
+  return {
+    id: `tpl-${Date.now()}`,
+    name,
+    savedAt: new Date().toISOString(),
+    themeKey,
+    density: $("density")?.value || "balanced",
+    language: $("language")?.value || "auto",
+    theme: cloneDeck(baseTheme),
+    brand: cloneDeck(brand),
+    referenceAnalysis: deck?.referenceAnalysis ? cloneDeck(deck.referenceAnalysis) : (referenceAnalysis ? cloneDeck(referenceAnalysis) : null),
+    deckDNA: deck ? cloneDeck(deck.deckDNA || buildDeckDNA(deck)) : null,
+    layoutSignature: deck?.slides?.map((slide) => slide.layout) || [],
+    slideCount: deck?.slides?.length || Number($("slideCount")?.value) || 10
+  };
+}
+
+function saveTemplate() {
+  const template = makeTemplateFromCurrent();
+  const templates = loadTemplates().filter((item) => item.name.toLowerCase() !== template.name.toLowerCase());
+  templates.unshift(template);
+  storeTemplates(templates);
+  refreshTemplateSelect();
+  $("templateSelect").value = template.id;
+  $("templateName").value = template.name;
+  renderTemplates();
+}
+
+function applyTemplateSettings(template) {
+  if (!template) return;
+  applyWorkspaceSettings({
+    theme: template.themeKey || "executive",
+    density: template.density || "balanced",
+    language: template.language || "auto",
+    brandName: template.brand?.name || "",
+    audience: template.brand?.audience || "",
+    deckGoal: template.brand?.objective || "Executive decision",
+    tone: template.brand?.tone || "Board-ready",
+    brandAccent: template.brand?.accent || "#9a6a16"
+  });
+  $("templateName").value = template.name || "";
+}
+
+function sameColor(a, b) {
+  return String(a || "").toLowerCase() === String(b || "").toLowerCase();
+}
+
+function mappedTemplateColor(color, previousTheme, nextTheme) {
+  if (!color || !previousTheme || !nextTheme) return color;
+  const pairs = ["bg", "paper", "ink", "muted", "accent", "accent2", "white", "danger"];
+  const key = pairs.find((item) => sameColor(color, previousTheme[item]));
+  return key ? nextTheme[key] : color;
+}
+
+function recolorDeckToTheme(previousTheme, nextTheme) {
+  if (!deck) return;
+  deck.slides.forEach((slide) => {
+    slide.elements.forEach((element) => {
+      element.fill = mappedTemplateColor(element.fill, previousTheme, nextTheme);
+      element.stroke = mappedTemplateColor(element.stroke, previousTheme, nextTheme);
+    });
+  });
+}
+
+function applyThemeToDeck(nextTheme, title, detail) {
+  if (!deck || !nextTheme) return;
+  const previousTheme = cloneDeck(deck.theme || themes.executive);
+  deck.theme = cloneDeck(nextTheme);
+  recolorDeckToTheme(previousTheme, deck.theme);
+  deck.deckDNA = buildDeckDNA(deck);
+  deck.metadata.styleFingerprint = deck.deckDNA?.fingerprint || "";
+  deck.agentLog = [
+    ...(deck.agentLog || []),
+    {
+      index: (deck.agentLog || []).length + 1,
+      title,
+      detail
+    }
+  ];
+  repairDeckQA(2);
+  updateReview();
+}
+
+function applyTemplateToDeck(template) {
+  if (!deck || !template) return;
+  const previousTheme = cloneDeck(deck.theme || themes.executive);
+  const nextTheme = cloneDeck(template.theme || themes[template.themeKey] || themes.executive);
+  deck.theme = nextTheme;
+  deck.brand = cloneDeck(template.brand || {});
+  deck.metadata.templateId = template.id;
+  deck.metadata.templateName = template.name;
+  deck.metadata.brandName = deck.brand.name || "";
+  deck.metadata.audience = deck.brand.audience || deck.metadata.audience;
+  deck.metadata.objective = deck.brand.objective || deck.metadata.objective;
+  deck.metadata.tone = deck.brand.tone || deck.metadata.tone;
+  deck.metadata.templateAppliedAt = new Date().toISOString();
+  if (template.referenceAnalysis) deck.referenceAnalysis = cloneDeck(template.referenceAnalysis);
+  recolorDeckToTheme(previousTheme, nextTheme);
+  deck.deckDNA = buildDeckDNA(deck);
+  deck.metadata.styleFingerprint = deck.deckDNA?.fingerprint || "";
+  deck.agentLog = [
+    ...(deck.agentLog || []),
+    {
+      index: (deck.agentLog || []).length + 1,
+      title: "Apply template",
+      detail: `Applied reusable template: ${template.name}.`
+    }
+  ];
+  repairDeckQA(2);
+  updateReview();
+  render();
+}
+
+function applySelectedTemplate() {
+  const template = selectedTemplate();
+  if (!template) return;
+  applyTemplateSettings(template);
+  applyTemplateToDeck(template);
+  renderTemplates();
+}
+
+function deleteSelectedTemplate() {
+  const id = $("templateSelect")?.value || "";
+  if (!id) return;
+  storeTemplates(loadTemplates().filter((template) => template.id !== id));
+  $("templateName").value = "";
+  refreshTemplateSelect();
+}
+
+function loadSavePoints() {
+  try {
+    return JSON.parse(localStorage.getItem(SAVEPOINT_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function storeSavePoints(points) {
+  localStorage.setItem(SAVEPOINT_KEY, JSON.stringify(points.slice(0, 20)));
+}
+
+function refreshSavePointSelect() {
+  const select = $("savePointSelect");
+  if (!select) return;
+  const points = loadSavePoints();
+  if (!points.length) {
+    select.innerHTML = '<option value="">No save points</option>';
+    return;
+  }
+  select.innerHTML = points.map((point) => {
+    const label = `${point.title} - ${new Date(point.savedAt).toLocaleString()}`;
+    return `<option value="${point.id}">${escapeHtml(label)}</option>`;
+  }).join("");
+}
+
+function savePoint() {
+  if (!deck) return;
+  const points = loadSavePoints();
+  const point = {
+    id: `sp-${Date.now()}`,
+    title: deck.metadata?.title || "Untitled deck",
+    savedAt: new Date().toISOString(),
+    slideCount: deck.slides?.length || 0,
+    workspace: readWorkspaceSettings(),
+    deck: cloneDeck(deck)
+  };
+  points.unshift(point);
+  storeSavePoints(points);
+  refreshSavePointSelect();
+  $("savePointSelect").value = point.id;
+}
+
+function restoreSavePoint() {
+  const id = $("savePointSelect").value;
+  const point = loadSavePoints().find((candidate) => candidate.id === id);
+  if (!point) return;
+  deck = cloneDeck(point.deck);
+  referenceAnalysis = deck.referenceAnalysis ? cloneDeck(deck.referenceAnalysis) : point.workspace?.referenceAnalysis || null;
+  applyWorkspaceSettings({
+    brandName: "",
+    audience: "",
+    deckGoal: "Executive decision",
+    tone: "Board-ready",
+    brandAccent: "#9a6a16",
+    evidenceInput: "",
+    ...(point.workspace || {
+    prompt: deck.metadata?.description || "",
+    slideCount: String(point.slideCount || deck.slides?.length || 10)
+    })
+  });
+  selected = 0;
+  selectedObject = null;
+  activeTab = "preview";
+  runQA(false);
+  render();
+}
+
+function deleteSavePoint() {
+  const id = $("savePointSelect").value;
+  if (!id) return;
+  storeSavePoints(loadSavePoints().filter((point) => point.id !== id));
+  refreshSavePointSelect();
+}
+
+function slugify(text) {
+  return (text || "deckforge")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64) || "deckforge";
+}
+
+function titleFromPrompt(prompt, rtl) {
+  const clean = prompt.replace(/\s+/g, " ").trim();
+  if (!clean) return rtl ? "\u0639\u0631\u0636 \u0627\u062d\u062a\u0631\u0627\u0641\u064a" : "Professional Presentation";
+  let candidate = clean
+    .replace(/^(create|make|build|generate)\s+(a\s+)?(professional\s+)?(\d+[- ]slide\s+)?(presentation|deck|slides)?\s*/i, "")
+    .replace(/^(investor|sales|client|training|executive)?\s*(presentation|deck)\s+(for|about|on)\s+(an?\s+)?/i, "")
+    .replace(/^(about|on)\s+/i, "");
+  const about = clean.match(/\babout\s+(.+)$/i);
+  if (about) candidate = about[1];
+  candidate = candidate
+    .replace(/\s+(and|with)\s+(practical|actionable|detailed|clear)\b.*$/i, "")
+    .replace(/\s+methods?\s+to\b.*$/i, "")
+    .replace(/\s+that\b.*$/i, "")
+    .replace(/[.؟?]+$/g, "")
+    .trim();
+  const maxWords = rtl ? 7 : 6;
+  const words = candidate.split(" ").filter(Boolean).slice(0, maxWords).join(" ");
+  if (!words) return rtl ? "\u0639\u0631\u0636 \u0627\u062d\u062a\u0631\u0627\u0641\u064a" : "Professional Presentation";
+  if (rtl) return words;
+  return words.replace(/\w\S*/g, (word, offset) => {
+    const lower = word.toLowerCase();
+    if (["ai", "api", "saas", "roi", "b2b", "b2c", "crm", "kpi", "gtm", "hr", "erp"].includes(lower)) return lower.toUpperCase();
+    if (offset > 0 && ["a", "an", "of", "and", "to", "in", "for", "the"].includes(lower)) return lower;
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  });
+}
+
+function extractKeywords(prompt) {
+  const stop = new Set([
+    "create", "make", "build", "generate", "professional", "presentation", "slides", "slide",
+    "about", "with", "and", "for", "the", "that", "this", "into", "from", "using", "methods",
+    "benefits", "practical", "master", "learn", "learning", "investor", "sales", "client",
+    "training", "executive", "deck", "pitch"
+  ]);
+  return prompt
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/-/g, " ")
+    .split(/\s+/)
+    .filter((word) => word.length > 3 && !stop.has(word))
+    .slice(0, 6);
+}
+
+function inferAudience(prompt) {
+  const p = prompt.toLowerCase();
+  if (/investor|funding|pitch|vc|startup/.test(p)) return "investors and decision makers";
+  if (/student|school|university|lesson|teacher/.test(p)) return "students and educators";
+  if (/sales|client|customer|proposal/.test(p)) return "clients and commercial stakeholders";
+  if (/team|employee|training|workshop/.test(p)) return "internal teams";
+  return "executive audience";
+}
+
+function normalizeHex(value, fallback = "") {
+  const hex = String(value || "").trim();
+  return /^#[0-9a-f]{6}$/i.test(hex) ? hex : fallback;
+}
+
+function readBrandBrief(prompt) {
+  const defaultGoal = "Executive decision";
+  const defaultTone = "Board-ready";
+  const defaultAccent = "#9a6a16";
+  const name = $("brandName")?.value.trim() || "";
+  const audienceInput = $("audienceInput")?.value.trim() || "";
+  const objective = $("deckGoal")?.value || defaultGoal;
+  const tone = $("tone")?.value || defaultTone;
+  const accent = normalizeHex($("brandAccent")?.value, defaultAccent);
+  const configured = Boolean(
+    name ||
+    audienceInput ||
+    objective !== defaultGoal ||
+    tone !== defaultTone ||
+    accent.toLowerCase() !== defaultAccent
+  );
+  return {
+    name,
+    audience: audienceInput || (configured ? inferAudience(prompt) : ""),
+    objective,
+    tone,
+    accent,
+    configured
+  };
+}
+
+function applyBrandToTheme(baseTheme, brand) {
+  const theme = { ...baseTheme };
+  const defaultAccent = "#9a6a16";
+  const hasCustomAccent = brand.accent && brand.accent.toLowerCase() !== defaultAccent;
+  if (brand.configured && hasCustomAccent && contrast(brand.accent, "#ffffff") >= 2.8) {
+    theme.accent = brand.accent;
+  }
+  return theme;
+}
+
+function hexRgb(hex) {
+  const value = normalizeHex(hex, "#000000").replace("#", "");
+  return [0, 2, 4].map((index) => parseInt(value.slice(index, index + 2), 16) || 0);
+}
+
+function hexLuminance(hex) {
+  const [r, g, b] = hexRgb(hex).map((channel) => {
+    const value = channel / 255;
+    return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function paletteColors(analysis = {}) {
+  const imported = analysis.importedDeckDNA?.palette || [];
+  const direct = analysis.palette || [];
+  return [...direct, ...imported]
+    .map((item) => ({
+      color: normalizeHex(item.color || item.hex || "", ""),
+      role: String(item.role || "").toLowerCase(),
+      count: Number(item.count || 0)
+    }))
+    .filter((item) => item.color)
+    .sort((a, b) => b.count - a.count);
+}
+
+function pickPaletteColor(items, predicate, fallback = "") {
+  return items.find(predicate)?.color || fallback;
+}
+
+function synthesizeReferenceTheme(baseTheme, analysis = {}) {
+  const source = cloneDeck(baseTheme || themes.executive);
+  const tokens = analysis.importedDeckDNA?.styleTokens || {};
+  const recipe = analysis.visualRecipe || {};
+  const recipeTags = new Set((recipe.tags || []).map((tag) => String(tag || "").toLowerCase()));
+  const recipeFontNames = (recipe.topFonts || []).map((item) => item.font).filter(Boolean);
+  const colors = paletteColors(analysis);
+  const lightColors = colors.filter((item) => hexLuminance(item.color) > 0.72);
+  const darkColors = colors.filter((item) => hexLuminance(item.color) < 0.22);
+  const midColors = colors.filter((item) => hexLuminance(item.color) >= 0.22 && hexLuminance(item.color) <= 0.72);
+  const prefersInvestorDark = recipe.rtlSlideRatio >= 0.5
+    && (recipeTags.has("dark-panels") || recipeTags.has("editorial-chrome"))
+    && darkColors.length;
+  const paper = normalizeHex(tokens.paper, "")
+    || pickPaletteColor(colors, (item) => item.role.includes("paper"), "")
+    || lightColors[0]?.color
+    || source.paper;
+  const bg = normalizeHex(tokens.background || tokens.bg, "")
+    || pickPaletteColor(colors, (item) => item.role.includes("bg"), "")
+    || darkColors[0]?.color
+    || source.bg;
+  const ink = normalizeHex(tokens.ink, "")
+    || pickPaletteColor(colors, (item) => item.role.includes("ink"), "")
+    || darkColors.find((item) => contrast(item.color, paper) >= 4.5)?.color
+    || source.ink;
+  const accent = normalizeHex(analysis.suggestedAccent, "")
+    || normalizeHex(tokens.accent, "")
+    || pickPaletteColor(colors, (item) => item.role.includes("accent"), "")
+    || midColors[0]?.color
+    || source.accent;
+  const accent2 = normalizeHex(tokens.secondaryAccent || tokens.accent2, "")
+    || midColors.find((item) => !sameColor(item.color, accent))?.color
+    || colors.find((item) => ![paper, bg, ink, accent].some((color) => sameColor(color, item.color)))?.color
+    || source.accent2;
+  const muted = normalizeHex(tokens.muted, "")
+    || colors.find((item) => item.role.includes("neutral"))?.color
+    || midColors.find((item) => contrast(item.color, paper) >= 3)?.color
+    || source.muted;
+  return {
+    ...source,
+    name: `Reference ${analysis.kind || "Deck"} Style`,
+    bg,
+    paper,
+    ink,
+    muted,
+    accent,
+    accent2,
+    white: source.white || "#ffffff",
+    danger: source.danger || "#b42318",
+    rtlPremium: recipe.rtlSlideRatio >= 0.5 || source.rtlPremium || false,
+    investorDark: prefersInvestorDark || source.investorDark || false,
+    fontArabic: recipeFontNames[0] || source.fontArabic || "Tajawal",
+    fontBody: recipeFontNames.find((font) => /tajawal/i.test(font)) || source.fontBody || (prefersInvestorDark ? "Tajawal" : ""),
+    fontLatin: recipeFontNames.find((font) => /amiri|playfair|aptos/i.test(font)) || source.fontLatin || "Aptos",
+    referenceDeck: analysis.fileName || "",
+    referenceFingerprint: analysis.fingerprint || "",
+    source: "reference-analysis"
+  };
+}
+
+function parseEvidenceInput(raw) {
+  return String(raw || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const parts = line.split(/\s*\|\s*|\s+-\s*/).map((part) => part.trim()).filter(Boolean);
+      let metric = parts[0] || "";
+      let label = parts[1] || "";
+      let source = parts.slice(2).join(" - ") || "User brief";
+      if (parts.length < 2) {
+        const found = line.match(/[\$€£]?\d[\d,.]*(?:\s?(?:%|x|k|m|b|mo|yr|days|sites|\+))?/i);
+        metric = found ? found[0].trim() : `Point ${index + 1}`;
+        label = found ? line.replace(found[0], "").replace(/^[:\s-]+|[:\s-]+$/g, "") : line;
+      }
+      return {
+        id: `ev-${index + 1}`,
+        metric,
+        label: label || "Evidence point",
+        source,
+        raw: line
+      };
+    })
+    .slice(0, 8);
+}
+
+function metricMatch(text) {
+  return String(text || "").match(/[$]?\d[\d,.]*(?:\s?(?:%|x|k|m|b|mo|yr|days|weeks|hours|hrs|users|customers|sites|\+)(?:\/(?:day|week|month|year|mo|yr))?)?/i);
+}
+
+function cleanSourceLabel(value, fallback) {
+  const label = String(value || "").replace(/\s+/g, " ").replace(/^[-:|\s]+|[-:|\s]+$/g, "").trim();
+  return label ? label.slice(0, 72) : fallback;
+}
+
+function sourceHostname(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function parseSourceInput(raw) {
+  const lines = String(raw || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const sources = [];
+  const evidence = [];
+  lines.forEach((line, index) => {
+    const url = (line.match(/https?:\/\/[^\s)]+/i) || [""])[0];
+    const parts = line.split(/\s*\|\s*/).map((part) => part.trim()).filter(Boolean);
+    const bracket = line.match(/^\[([^\]]+)\]\s*(.+)$/);
+    let label = parts.length > 1 ? parts[0] : "";
+    let excerpt = parts.length > 1 ? parts.slice(1).join(" | ") : line;
+    if (bracket) {
+      label = bracket[1];
+      excerpt = bracket[2];
+    }
+    label = cleanSourceLabel(label || sourceHostname(url), `Source ${index + 1}`);
+    excerpt = excerpt.replace(url, "").replace(/\s+/g, " ").trim() || line.replace(url, "").trim();
+    const source = {
+      id: `src-${index + 1}`,
+      label,
+      type: url ? "link" : "note",
+      url,
+      excerpt: excerpt.slice(0, 420),
+      claimIds: []
+    };
+    const sentences = excerpt.split(/(?:\.|;)\s+/).map((item) => item.trim()).filter(Boolean);
+    sentences.forEach((sentence, sentenceIndex) => {
+      const found = metricMatch(sentence);
+      if (!found) return;
+      const metric = found[0].trim();
+      const labelText = cleanSourceLabel(sentence.replace(found[0], "").replace(/\s*[|]+\s*/g, " "), "Source-backed claim").slice(0, 42);
+      const claim = {
+        id: `src-ev-${index + 1}-${sentenceIndex + 1}`,
+        metric,
+        label: labelText,
+        source: label,
+        sourceId: source.id,
+        raw: sentence
+      };
+      source.claimIds.push(claim.id);
+      evidence.push(claim);
+    });
+    sources.push(source);
+  });
+  return {
+    sources,
+    evidence: evidence.slice(0, 8),
+    summary: {
+      sourceCount: sources.length,
+      claimCount: evidence.length,
+      linkedSourceCount: sources.filter((source) => source.url).length
+    }
+  };
+}
+
+function parseDocumentBlocks(raw) {
+  const lines = String(raw || "").split(/\r?\n/);
+  const blocks = [];
+  let current = null;
+  lines.forEach((line) => {
+    const marker = line.match(/^---\s*Document:\s*(.+?)\s*---$/i);
+    if (marker) {
+      if (current && current.lines.join("\n").trim()) blocks.push(current);
+      current = { name: cleanSourceLabel(marker[1], `Document ${blocks.length + 1}`), lines: [] };
+      return;
+    }
+    if (!current) current = { name: "Document brief", lines: [] };
+    current.lines.push(line);
+  });
+  if (current && current.lines.join("\n").trim()) blocks.push(current);
+  return blocks.map((block, index) => {
+    const textValue = block.lines.join("\n").replace(/\s+\n/g, "\n").trim();
+    return {
+      id: `doc-${index + 1}`,
+      name: cleanSourceLabel(block.name, `Document ${index + 1}`),
+      type: "document",
+      characterCount: textValue.length,
+      wordCount: textValue.split(/\s+/).filter(Boolean).length,
+      excerpt: textValue.replace(/\s+/g, " ").slice(0, 700),
+      text: textValue
+    };
+  });
+}
+
+function parseDocumentInput(raw) {
+  const documents = parseDocumentBlocks(raw).slice(0, 8);
+  const sources = [];
+  const evidence = [];
+  documents.forEach((documentItem, index) => {
+    const source = {
+      id: documentItem.id,
+      label: documentItem.name,
+      type: "document",
+      url: "",
+      excerpt: documentItem.excerpt,
+      claimIds: []
+    };
+    const sentences = documentItem.text
+      .split(/(?:[.;]|\n)+\s*/)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 8);
+    sentences.forEach((sentence, sentenceIndex) => {
+      if (source.claimIds.length >= 4 || evidence.length >= 12) return;
+      const found = metricMatch(sentence);
+      if (!found) return;
+      const metric = found[0].trim();
+      const labelText = cleanSourceLabel(sentence.replace(found[0], "").replace(/\s*[|,]+\s*/g, " "), "Document-backed claim").slice(0, 48);
+      const claim = {
+        id: `doc-ev-${index + 1}-${sentenceIndex + 1}`,
+        metric,
+        label: labelText,
+        source: documentItem.name,
+        sourceId: source.id,
+        raw: sentence
+      };
+      source.claimIds.push(claim.id);
+      evidence.push(claim);
+    });
+    sources.push(source);
+  });
+  return {
+    documents: documents.map(({ text, ...item }) => item),
+    sources,
+    evidence,
+    summary: {
+      documentCount: documents.length,
+      claimCount: evidence.length,
+      wordCount: documents.reduce((sum, item) => sum + item.wordCount, 0)
+    }
+  };
+}
+
+function buildSourceMap(sources, evidence) {
+  const sourceEvidence = new Map((evidence || [])
+    .filter((item) => item.sourceId)
+    .map((item) => [item.id, item]));
+  return {
+    sourceCount: sources.length,
+    sourceClaimCount: sourceEvidence.size,
+    linkedSourceCount: sources.filter((source) => source.url).length,
+    coverage: sources.map((source) => ({
+      id: source.id,
+      label: source.label,
+      type: source.type,
+      url: source.url,
+      evidenceIds: source.claimIds.filter((id) => sourceEvidence.has(id))
+    }))
+  };
+}
+
+function buildReferences(sources, documents, evidence) {
+  const documentById = new Map((documents || []).map((item) => [item.id, item]));
+  const references = (sources || []).map((source) => {
+    const documentItem = documentById.get(source.id);
+    return {
+      id: `ref-${source.id}`,
+      sourceId: source.id,
+      label: source.label,
+      type: source.type,
+      url: source.url || "",
+      excerpt: source.excerpt || documentItem?.excerpt || "",
+      wordCount: documentItem?.wordCount || 0,
+      evidenceIds: [],
+      claimCount: 0
+    };
+  });
+  const bySourceId = new Map(references.map((item) => [item.sourceId, item]));
+  (evidence || []).forEach((item, index) => {
+    let reference = item.sourceId ? bySourceId.get(item.sourceId) : null;
+    if (!reference && item.source && item.source !== "User brief") {
+      const sourceId = `brief-${slugify(item.source) || index + 1}`;
+      reference = bySourceId.get(sourceId);
+      if (!reference) {
+        reference = {
+          id: `ref-${sourceId}`,
+          sourceId,
+          label: item.source,
+          type: "brief",
+          url: "",
+          excerpt: item.raw || item.label || "",
+          wordCount: 0,
+          evidenceIds: [],
+          claimCount: 0
+        };
+        bySourceId.set(sourceId, reference);
+        references.push(reference);
+      }
+    }
+    if (!reference) return;
+    reference.evidenceIds.push(item.id || `ev-${index + 1}`);
+    reference.claimCount += 1;
+  });
+  return references.map((item, index) => ({
+    ...item,
+    index: index + 1,
+    citation: `[${index + 1}]`
+  }));
+}
+
+function referenceSummary(ctx) {
+  const cited = (ctx.references || [])
+    .filter((item) => item.claimCount || item.type === "link" || item.type === "document")
+    .slice(0, 3);
+  if (!cited.length) return sourceSummary(ctx.evidence);
+  return cited.map((item) => `${item.citation} ${item.label}`).join("; ");
+}
+
+function evidenceForLayout(ctx, layout) {
+  const evidence = ctx.evidence || [];
+  if (!evidence.length) return null;
+  const map = {
+    problem: 0,
+    market: 1,
+    traction: 2,
+    financials: 0,
+    metrics: 0,
+    ask: 2,
+    "buyer-pain": 0,
+    proof: 1,
+    "commercial-case": 0,
+    "learner-context": 0,
+    "practice-loop": 1,
+    assessment: 2
+  };
+  return evidence[Math.min(map[layout] ?? 0, evidence.length - 1)];
+}
+
+function sourceSummary(evidence) {
+  const sources = [...new Set((evidence || []).map((item) => item.source).filter(Boolean))];
+  return sources.slice(0, 2).join("; ");
+}
+
+function parseMetricNumber(metric) {
+  const value = String(metric || "").trim();
+  if (/^\d+\s*[-–]\s*\d+\s*[-–]\s*\d+$/i.test(value)) return null;
+  const match = value.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const parsed = Number(match[0]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function metricUnit(metric) {
+  const value = String(metric || "").toLowerCase();
+  if (value.includes("%")) return "%";
+  if (/hrs?|hours?/.test(value) && /week|wk/.test(value)) return "hrs/week";
+  if (/days?/.test(value)) return "days";
+  if (/users?/.test(value)) return "users";
+  if (/customers?/.test(value)) return "customers";
+  if (/sites?/.test(value)) return "sites";
+  if (/\$/.test(value)) return "$";
+  return "";
+}
+
+function buildCharts(evidence) {
+  const metrics = (evidence || [])
+    .map((item, index) => ({
+      id: item.id || `chart-metric-${index + 1}`,
+      metric: item.metric || "",
+      value: parseMetricNumber(item.metric),
+      unit: metricUnit(item.metric),
+      label: cleanSourceLabel(item.label, `Metric ${index + 1}`),
+      source: item.source || "User brief",
+      sourceId: item.sourceId || ""
+    }))
+    .filter((item) => item.value !== null)
+    .slice(0, 5);
+  if (!metrics.length) return [];
+  const maxValue = Math.max(...metrics.map((item) => Math.abs(item.value)), 1);
+  return [{
+    id: "chart-1",
+    type: "evidence-bars",
+    title: "Evidence Signal Chart",
+    subtitle: "Auto-built from supplied metrics and document claims",
+    maxValue,
+    items: metrics.map((item) => ({
+      ...item,
+      ratio: Math.max(0.08, Math.min(1, Math.abs(item.value) / maxValue))
+    }))
+  }];
+}
+
+function metricSize(value, base) {
+  const length = String(value || "").length;
+  if (length > 14) return Math.max(34, base - 30);
+  if (length > 10) return Math.max(40, base - 24);
+  if (length > 7) return Math.max(46, base - 16);
+  return base;
+}
+
+function inferArchetype(prompt) {
+  const p = prompt.toLowerCase();
+  if (/success story|case study|founder story|company history|timeline|origin story|biography|journey|قصة نجاح|دراسة حالة|رحلة|تاريخ|سيرة|من .+ إلى|البدايات|محطات/.test(p)) return "success-story";
+  if (/investor|funding|pitch|vc|startup|seed|series\s+[abc]|مستثمر|استثمار|تمويل|شركة ناشئة|ستارت.?اب|جولة|رأس المال/.test(p)) return "investor-pitch";
+  if (/training|workshop|lesson|course|teach|teacher|تدريب|ورشة|درس|دورة|تعليم|متدرب/.test(p)) return "training";
+  if (/sales|client|proposal|customer|مبيعات|عميل|عملاء|عرض سعر|عرض تجاري|اقتراح|مقترح/.test(p)) return "sales";
+  return "executive-brief";
+}
+
+function selectLayouts(prompt, count, opts = {}) {
+  const archetype = inferArchetype(prompt);
+  if (archetype === "success-story") {
+    const picked = (opts.rtl || hasArabic(prompt) ? arabicCinematicLayouts : layouts).slice(0, Math.max(1, count));
+    if (count >= 6 && !picked.includes("closing")) picked[picked.length - 1] = "closing";
+    return picked.slice(0, count);
+  }
+  if (archetype === "investor-pitch") {
+    const sequence = opts.rtl || hasArabic(prompt) ? arabicInvestorLayouts : investorLayouts;
+    const picked = sequence.slice(0, Math.max(1, count));
+    if (count >= 6 && sequence === arabicInvestorLayouts && !picked.includes("closing")) picked[picked.length - 1] = "closing";
+    if (count >= 6 && sequence !== arabicInvestorLayouts && !picked.includes("ask")) picked[picked.length - 1] = "ask";
+    return picked.slice(0, count);
+  }
+  if (archetype === "sales") {
+    const picked = salesLayouts.slice(0, Math.max(1, count));
+    if (count >= 6 && !picked.includes("next-steps")) picked[picked.length - 1] = "next-steps";
+    return picked.slice(0, count);
+  }
+  if (archetype === "training") {
+    const picked = trainingLayouts.slice(0, Math.max(1, count));
+    if (count >= 6 && !picked.includes("closing")) picked[picked.length - 1] = "closing";
+    return picked.slice(0, count);
+  }
+  const picked = layouts.slice(0, count - 1);
+  if (!picked.includes("closing")) picked.push("closing");
+  return picked.slice(0, count);
+}
+
+function buildStrategy(prompt, title, rtl, count, themeName, keywords, archetype, brand, evidence, sources = [], documents = [], charts = [], references = []) {
+  const focus = keywords.length ? keywords.join(", ") : title;
+  const narratives = {
+    "investor-pitch": "problem -> solution -> market -> traction -> model -> ask",
+    sales: "client context -> pain -> solution -> proof -> scope -> commercial case -> next steps",
+    training: "outcomes -> context -> concepts -> practice -> assessment -> rollout"
+  };
+  return {
+    brand: brand.name || "Unbranded",
+    audience: brand.audience || inferAudience(prompt),
+    objective: brand.objective,
+    tone: brand.tone,
+    evidenceCount: evidence.length,
+    sourceCount: sources.length,
+    documentCount: documents.length,
+    chartCount: charts.length,
+    referenceCount: references.length,
+    evidenceSummary: evidence.length ? evidence.map((item) => `${item.metric} ${item.label}`).join("; ") : "No supplied evidence",
+    sourceSummary: sources.length ? sources.map((source) => source.label).slice(0, 4).join("; ") : "No supplied sources",
+    documentSummary: documents.length ? documents.map((item) => item.name).slice(0, 4).join("; ") : "No uploaded documents",
+    archetype,
+    narrative: narratives[archetype] || (rtl ? "context -> value -> method -> action" : "context -> value -> proof -> operating plan -> action"),
+    visualDirection: `${themeName}; ${brand.configured ? `${brand.tone} brand treatment; ` : ""}fixed 16:9 canvas; strong hierarchy; restrained color; editable evidence charts and vector-like visual blocks`,
+    contentFocus: focus,
+    exportContract: `${count} HTML slides plus manifest, deck DNA, briefing, QA, source, document, reference, chart, and PPTX export metadata`
+  };
+}
+
+function buildAgentLog(strategy, count) {
+  return [
+    ["Interpret request", `Audience: ${strategy.audience}. Focus: ${strategy.contentFocus}.`],
+    ["Apply brief", `Brand: ${strategy.brand}. Objective: ${strategy.objective}. Tone: ${strategy.tone}.`],
+    ["Ground evidence", `${strategy.evidenceCount} evidence point${strategy.evidenceCount === 1 ? "" : "s"} across ${strategy.sourceCount || 0} source${strategy.sourceCount === 1 ? "" : "s"}, ${strategy.documentCount || 0} document${strategy.documentCount === 1 ? "" : "s"}, and ${strategy.referenceCount || 0} reference${strategy.referenceCount === 1 ? "" : "s"}. ${strategy.chartCount || 0} editable chart${strategy.chartCount === 1 ? "" : "s"} planned. ${strategy.evidenceSummary}.`],
+    ["Plan deck", `Created a ${count}-slide narrative: ${strategy.narrative}.`],
+    ["Design system", strategy.visualDirection],
+    ["Build slides", "Generated manifest, slide HTML, object metadata, and editable text/shape layers."],
+    ["Run QA", "Checked rendered text overflow, edge safety, hierarchy, and contrast."],
+    ["Prepare exports", strategy.exportContract]
+  ].map(([title, detail], index) => ({ index: index + 1, title, detail }));
+}
+
+function slidePlainText(slide) {
+  return (slide?.elements || [])
+    .filter((element) => element.type === "text")
+    .map((element) => element.text || "")
+    .join(" ");
+}
+
+function evidenceCitation(evidenceItem, references = []) {
+  if (!evidenceItem) return "";
+  const reference = references.find((item) => (item.evidenceIds || []).includes(evidenceItem.id));
+  return reference?.citation || "";
+}
+
+function buildBriefing(deckInput = deck) {
+  if (!deckInput) return null;
+  const metadata = deckInput.metadata || {};
+  const strategy = deckInput.strategy || {};
+  const slides = deckInput.slides || [];
+  const evidence = deckInput.evidence || [];
+  const references = deckInput.references || [];
+  const title = metadata.title || "Untitled deck";
+  const audience = metadata.audience || strategy.audience || "the audience";
+  const objective = metadata.objective || strategy.objective || "decision alignment";
+  const brandName = metadata.brandName || deckInput.brand?.name || strategy.brand || "";
+  const keyMessages = slides
+    .filter((slide) => !["cover", "closing"].includes(slide.layout))
+    .slice(0, 5)
+    .map((slide, index) => ({
+      id: `message-${index + 1}`,
+      title: slide.title || labelFromLayout(slide.layout),
+      message: slide.brief || `Use this section to advance the ${strategy.narrative || "core narrative"}.`
+    }));
+  const evidenceCallouts = evidence.slice(0, 6).map((item, index) => ({
+    id: item.id || `evidence-${index + 1}`,
+    metric: item.metric,
+    label: item.label,
+    source: item.source || "User brief",
+    citation: evidenceCitation(item, references),
+    talkTrack: `${item.metric} ${item.label}${evidenceCitation(item, references) ? ` ${evidenceCitation(item, references)}` : ""}`
+  }));
+  const objectionsByArchetype = {
+    sales: [
+      ["Implementation risk", "Anchor the answer in phases, owners, decision gates, and the smallest low-risk pilot."],
+      ["Adoption", "Tie adoption to manager workflow, time saved, and visible day-one operating cues."],
+      ["ROI confidence", "Use the evidence callouts and references to connect investment to measurable commercial impact."]
+    ],
+    "investor-pitch": [
+      ["Market confidence", "Explain the wedge, early proof, and why this category can support scale."],
+      ["Execution risk", "Point to focused milestones, hiring priorities, and the next validation gates."],
+      ["Defensibility", "Connect product workflow, data depth, and repeatable go-to-market motion."]
+    ],
+    training: [
+      ["Behavior change", "Show the practice loop, reinforcement cadence, and assessment method."],
+      ["Learner readiness", "Name the starting point and the support built into the rollout."],
+      ["Measurement", "Use assessment and follow-up metrics to prove transfer into work."]
+    ]
+  };
+  const objectionHandling = (objectionsByArchetype[deckInput.archetype] || [
+    ["Strategic priority", "Connect the proposal to the audience's current decision pressure and objective."],
+    ["Execution confidence", "Use the roadmap, owners, and QA-ready evidence to reduce perceived risk."],
+    ["Proof", "Point to the strongest cited evidence and explain why it matters now."]
+  ]).map(([objection, response], index) => ({ id: `objection-${index + 1}`, objection, response }));
+  const perSlide = slides.map((slide, index) => {
+    const corpus = normalizeClaimText(slidePlainText(slide));
+    const matchedEvidence = evidence.filter((item) => {
+      const metric = normalizeClaimText(item.metric);
+      return metric && corpus.includes(metric);
+    }).slice(0, 3);
+    return {
+      slide: index + 1,
+      title: slide.title || labelFromLayout(slide.layout),
+      role: slide.layout === "cover" ? "opening" : ["closing", "next-steps", "ask"].includes(slide.layout) ? "close" : "body",
+      cue: slide.speakerNotes || slide.brief || "Name the headline, explain the implication, and move to the next decision.",
+      evidence: matchedEvidence.map((item) => ({
+        metric: item.metric,
+        label: item.label,
+        citation: evidenceCitation(item, references)
+      }))
+    };
+  });
+  return {
+    title,
+    generatedAt: new Date().toISOString(),
+    summary: `${title} is a ${slides.length}-slide ${deckInput.archetype || "executive"} presentation for ${audience}, built to support ${objective}.`,
+    opening: `Open by naming the audience's current pressure, then position ${brandName || "the recommendation"} as the practical path to the desired outcome.`,
+    close: `Close with the decision path, next owner, timing, and the smallest credible commitment toward ${objective}.`,
+    keyMessages,
+    evidenceCallouts,
+    objectionHandling,
+    perSlide
+  };
+}
+
+function rounded(value, digits = 1) {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+}
+
+function colorRoleFor(theme, color) {
+  const normalized = normalizeHex(color, "").toLowerCase();
+  const match = Object.entries(theme || {}).find(([, value]) => normalizeHex(value, "").toLowerCase() === normalized);
+  return match ? match[0] : "custom";
+}
+
+function collectDeckColors(deckInput) {
+  const theme = deckInput.theme || {};
+  const colors = new Map();
+  const add = (raw, source, slideNumber = 0) => {
+    const color = normalizeHex(raw, "").toLowerCase();
+    if (!color) return;
+    const current = colors.get(color) || {
+      color,
+      role: colorRoleFor(theme, color),
+      count: 0,
+      sources: new Set(),
+      slides: new Set()
+    };
+    current.count += 1;
+    current.sources.add(source);
+    if (slideNumber) current.slides.add(slideNumber);
+    colors.set(color, current);
+  };
+  ["bg", "paper", "ink", "muted", "accent", "accent2", "white", "danger"].forEach((role) => add(theme[role], `theme.${role}`));
+  (deckInput.slides || []).forEach((slide, slideIndex) => {
+    (slide.elements || []).forEach((element) => {
+      add(element.fill, `${element.type}.fill`, slideIndex + 1);
+      add(element.stroke, `${element.type}.stroke`, slideIndex + 1);
+    });
+  });
+  return Array.from(colors.values())
+    .map((item) => ({
+      color: item.color,
+      role: item.role,
+      count: item.count,
+      sources: Array.from(item.sources).slice(0, 4),
+      slideCount: item.slides.size
+    }))
+    .sort((a, b) => b.count - a.count || a.color.localeCompare(b.color));
+}
+
+function countBy(items) {
+  return items.reduce((acc, item) => {
+    const key = item || "unknown";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function deckTextStats(slides) {
+  const textElements = slides.flatMap((slide) => (slide.elements || []).filter((element) => element.type === "text"));
+  const sizes = textElements.map((element) => Number(element.size) || 0).filter(Boolean);
+  const bodySizes = sizes.filter((size) => size < 44);
+  const titleSizes = sizes.filter((size) => size >= 44);
+  const textChars = textElements.reduce((sum, element) => sum + String(element.text || "").length, 0);
+  return {
+    textElementCount: textElements.length,
+    totalCharacters: textChars,
+    avgCharactersPerSlide: slides.length ? Math.round(textChars / slides.length) : 0,
+    titleSize: titleSizes.length ? Math.round(Math.max(...titleSizes)) : (sizes.length ? Math.round(Math.max(...sizes)) : 0),
+    bodySize: bodySizes.length ? Math.round(bodySizes.reduce((sum, size) => sum + size, 0) / bodySizes.length) : (sizes.length ? Math.round(sizes[0]) : 0),
+    sizeRange: sizes.length ? `${Math.min(...sizes)}-${Math.max(...sizes)}px` : "n/a"
+  };
+}
+
+function buildDeckDNA(deckInput = deck) {
+  if (!deckInput) return null;
+  const slides = deckInput.slides || [];
+  const metadata = deckInput.metadata || {};
+  const theme = deckInput.theme || {};
+  const brand = deckInput.brand || {};
+  const strategy = deckInput.strategy || {};
+  const palette = collectDeckColors(deckInput).slice(0, 8);
+  const textStats = deckTextStats(slides);
+  const layoutCounts = countBy(slides.map((slide) => slide.layout));
+  const roleCounts = countBy(slides.map((slide) => roleForLayout(slide.layout)));
+  const objectCounts = slides.map((slide) => (slide.elements || []).length);
+  const shapeCount = slides.reduce((sum, slide) => sum + (slide.elements || []).filter((element) => ["shape", "imageBlock"].includes(element.type)).length, 0);
+  const textCount = textStats.textElementCount;
+  const chartCount = (deckInput.charts || []).length;
+  const evidenceCount = (deckInput.evidence || []).length;
+  const referenceCount = (deckInput.references || []).length;
+  const avgObjectCount = objectCounts.length ? rounded(objectCounts.reduce((sum, value) => sum + value, 0) / objectCounts.length) : 0;
+  const primaryLayout = Object.entries(layoutCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "mixed";
+  const densityLabel = textStats.avgCharactersPerSlide > 760 ? "dense" : textStats.avgCharactersPerSlide > 430 ? "balanced" : "visual";
+  const visualRatio = textCount + shapeCount ? rounded(shapeCount / (textCount + shapeCount), 2) : 0;
+  const accentContrast = normalizeHex(theme.accent, "") && normalizeHex(theme.paper, "") ? rounded(contrast(theme.accent, theme.paper), 2) : 0;
+  const recommendations = [];
+  if (evidenceCount < 2) recommendations.push("Add two to three cited evidence points before client or board delivery.");
+  if (!chartCount && evidenceCount) recommendations.push("Convert at least one metric into an editable chart for stronger executive scan value.");
+  if (textStats.avgCharactersPerSlide > 760) recommendations.push("Reduce body copy or split dense slides before exporting to PPTX.");
+  if (accentContrast && accentContrast < 3) recommendations.push("Increase accent contrast against the slide paper color for safer presentation-room readability.");
+  if (Object.keys(layoutCounts).length < Math.min(5, slides.length)) recommendations.push("Vary layout rhythm with at least one proof, roadmap, or comparison slide.");
+  if (!recommendations.length) recommendations.push("Style system is export-ready; save it as a reusable template for the next deck.");
+  const styleTokens = {
+    canvas: `${deckInput.canvas?.width || W}x${deckInput.canvas?.height || H}`,
+    themeName: theme.name || "Custom",
+    background: theme.bg || "",
+    paper: theme.paper || "",
+    ink: theme.ink || "",
+    muted: theme.muted || "",
+    accent: theme.accent || "",
+    secondaryAccent: theme.accent2 || "",
+    titleSize: textStats.titleSize,
+    bodySize: textStats.bodySize,
+    headerBandHeight: 108,
+    footerBandHeight: 80,
+    cornerRadius: 8,
+    density: densityLabel
+  };
+  const fingerprint = [
+    styleTokens.themeName,
+    densityLabel,
+    primaryLayout,
+    `${slides.length} slides`,
+    brand.name || strategy.brand || "unbranded"
+  ].join(" / ");
+  return {
+    title: metadata.title || "Untitled deck",
+    generatedAt: new Date().toISOString(),
+    fingerprint,
+    summary: `${metadata.title || "This deck"} uses a ${styleTokens.themeName} system with ${densityLabel} information density, ${palette.length} tracked color tokens, and a ${strategy.narrative || "structured"} narrative.`,
+    palette,
+    typography: textStats,
+    layoutRhythm: {
+      primaryLayout,
+      layoutCounts,
+      roleCounts,
+      avgObjectCount,
+      visualRatio,
+      density: densityLabel
+    },
+    proofSystem: {
+      evidenceCount,
+      referenceCount,
+      chartCount,
+      factCheckStatus: deckInput.factCheck?.status || "not run"
+    },
+    styleTokens,
+    reusablePrompt: `Create a ${slides.length || 10}-slide professional deck using a ${styleTokens.themeName} visual system, ${densityLabel} slide density, ${brand.tone || metadata.tone || "board-ready"} tone, strong title hierarchy around ${styleTokens.titleSize || 56}px, concise body copy around ${styleTokens.bodySize || 24}px, ${styleTokens.accent || "brand"} accent cues, and a ${strategy.narrative || "context -> proof -> plan -> action"} narrative rhythm.`,
+    recommendations
+  };
+}
+
+function topicBank(prompt, rtl) {
+  const p = prompt.toLowerCase();
+  const keywords = extractKeywords(prompt);
+  const topic = keywords.length ? keywords.slice(0, 2).join(" ") : "the initiative";
+  const topicTitle = titleFromPrompt(prompt, rtl);
+  const englishLearning = /english|language|learning|learn|master/.test(p);
+  if (rtl) {
+    return {
+      agenda: ["\u0644\u0645\u0627\u0630\u0627 \u0647\u0630\u0627 \u0627\u0644\u0645\u0648\u0636\u0648\u0639\u061f", "\u0627\u0644\u0641\u0648\u0627\u0626\u062f \u0627\u0644\u0639\u0645\u0644\u064a\u0629", "\u0623\u0631\u0642\u0627\u0645 \u0648\u0645\u0624\u0634\u0631\u0627\u062a", "\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u062a\u0637\u0628\u064a\u0642", "\u062e\u0637\u0629 \u0627\u0644\u0637\u0631\u064a\u0642"],
+      benefits: ["\u0641\u0631\u0635 \u0623\u0648\u0633\u0639 \u0641\u064a \u0627\u0644\u0639\u0645\u0644", "\u0648\u0635\u0648\u0644 \u0623\u0633\u0631\u0639 \u0644\u0644\u0645\u0639\u0631\u0641\u0629", "\u062a\u0648\u0627\u0635\u0644 \u0623\u0641\u0636\u0644 \u0645\u0639 \u0627\u0644\u0639\u0627\u0644\u0645"],
+      pillars: ["\u0627\u0644\u0627\u0633\u062a\u0645\u0627\u0639", "\u0627\u0644\u062a\u062d\u062f\u062b", "\u0627\u0644\u0642\u0631\u0627\u0621\u0629", "\u0627\u0644\u0643\u062a\u0627\u0628\u0629"],
+      closing: "\u0627\u0628\u062f\u0623 \u0628\u062e\u0637\u0648\u0629 \u0648\u0627\u062d\u062f\u0629 \u0648\u0627\u062c\u0639\u0644 \u0627\u0644\u062a\u0639\u0644\u0645 \u0639\u0627\u062f\u0629 \u064a\u0648\u0645\u064a\u0629"
+    };
+  }
+  if (englishLearning) {
+    return {
+      agenda: ["Why English matters now", "Career and study benefits", "How fluency compounds", "Daily learning system", "90-day roadmap"],
+      benefits: ["Access better career options", "Learn from global sources", "Communicate with confidence"],
+      pillars: ["Listening", "Speaking", "Reading", "Writing"],
+      closing: "Start small, repeat daily, and turn English into a practical advantage"
+    };
+  }
+  return {
+    agenda: ["Why now", "Audience needs", "Value proposition", "Execution plan", "Next decisions"],
+    benefits: ["Clear ROI story", "Faster execution", "Better measurement"],
+    pillars: ["Insight", "Design", "Delivery", "Scale"],
+    closing: `Move ${topicTitle.toLowerCase()} from idea to repeatable operating system`
+  };
+}
+
+function el(type, x, y, w, h, props = {}) {
+  return { type, x, y, w, h, ...props };
+}
+
+function background(t) {
+  return [
+    el("shape", 0, 0, W, H, { fill: t.paper, stroke: t.paper }),
+    el("shape", 0, 0, W, 108, { fill: t.bg, stroke: t.bg }),
+    el("shape", 126, 148, 76, 8, { fill: t.accent, stroke: t.accent }),
+    el("shape", 0, 1000, W, 80, { fill: "#ffffff", stroke: "#ffffff" })
+  ];
+}
+
+function imageBlock(x, y, w, h, t, label) {
+  const bg = darkSurface(t);
+  return [
+    el("imageBlock", x, y, w, h, { fill: bg, stroke: bg, radius: 0 }),
+    el("shape", x + w * 0.08, y + h * 0.12, w * 0.72, h * 0.14, { fill: t.accent, stroke: t.accent, radius: 40 }),
+    el("shape", x + w * 0.16, y + h * 0.34, w * 0.66, h * 0.12, { fill: t.accent2, stroke: t.accent2, radius: 40 }),
+    el("shape", x + w * 0.1, y + h * 0.58, w * 0.78, h * 0.16, { fill: "#ffffff", stroke: "#ffffff", radius: 42 }),
+    el("text", x + 70, y + h - 142, w - 140, 72, { text: label, size: 24, fill: t.white, bold: true, align: "center" })
+  ];
+}
+
+function text(t, x, y, w, h, value, size, fill, opts = {}) {
+  return el("text", x, y, w, h, {
+    text: value,
+    size,
+    fill,
+    bold: !!opts.bold,
+    align: opts.align || "left",
+    rtl: !!opts.rtl,
+    lineHeight: opts.lineHeight || 1.1,
+    font: opts.font || (opts.rtl ? (t.fontArabic || "Tajawal") : (t.fontLatin || "Aptos")),
+    chartId: opts.chartId || ""
+  });
+}
+
+function chartElements(t, chart, x, y, w, h, opts = {}) {
+  if (!chart?.items?.length) return [];
+  const compact = !!opts.compact;
+  const items = chart.items.slice(0, compact ? 3 : 4);
+  const rowGap = compact ? 72 : 78;
+  const rowStart = y + (compact ? 84 : 98);
+  const barX = x + (compact ? 252 : 300);
+  const barMax = w - (compact ? 390 : 460);
+  const elements = [
+    el("shape", x, y, w, h, { fill: "#ffffff", stroke: "#d9e0ea", radius: 26, chartId: chart.id }),
+    text(t, x + 34, y + 28, w - 68, 34, chart.title || "Evidence chart", compact ? 24 : 28, t.ink, { bold: true, align: "left", chartId: chart.id }),
+    text(t, x + 34, y + 62, w - 68, 28, chart.subtitle || "Generated from evidence", compact ? 15 : 17, t.muted, { align: "left", chartId: chart.id })
+  ];
+  items.forEach((item, index) => {
+    const rowY = rowStart + index * rowGap;
+    const width = Math.max(54, Math.round(barMax * item.ratio));
+    const barFill = index === 1 ? t.accent2 : t.accent;
+    elements.push(text(t, x + 34, rowY - 2, compact ? 190 : 230, 26, item.metric, compact ? 22 : 24, t.ink, { bold: true, align: "left", chartId: chart.id }));
+    elements.push(text(t, x + 34, rowY + 27, compact ? 190 : 230, 28, item.label, compact ? 14 : 16, t.muted, { align: "left", lineHeight: 1.12, chartId: chart.id }));
+    elements.push(el("shape", barX, rowY + 4, barMax, compact ? 24 : 28, { fill: "#edf1f7", stroke: "#edf1f7", radius: 14, chartId: chart.id }));
+    elements.push(el("shape", barX, rowY + 4, width, compact ? 24 : 28, { fill: barFill, stroke: barFill, radius: 14, chartId: chart.id }));
+    elements.push(text(t, barX + Math.min(width + 14, barMax - 110), rowY - 2, 112, 30, item.metric, compact ? 16 : 18, t.ink, { bold: true, align: "left", chartId: chart.id }));
+  });
+  return elements;
+}
+
+function darkSurface(t) {
+  return contrast(t.white, t.bg) >= 2.8 ? t.bg : t.ink;
+}
+
+function brandFooter(ctx, layout) {
+  const brand = ctx.brand || {};
+  if (!brand.configured) return [];
+  const label = brand.name || ctx.title || "DeckForge";
+  const detail = [brand.audience, brand.objective].filter(Boolean).join(" / ");
+  const darkFooter = layout === "closing";
+  const mainColor = darkFooter ? ctx.theme.white : ctx.theme.ink;
+  const detailColor = darkFooter ? "#dbe4f0" : ctx.theme.muted;
+  return [
+    text(ctx.theme, 126, 1018, 620, 32, label, 18, mainColor, { bold: true, align: "left", rtl: ctx.rtl }),
+    text(ctx.theme, 1020, 1018, 780, 32, detail, 16, detailColor, { align: "right", rtl: ctx.rtl })
+  ];
+}
+
+function evidenceFooter(ctx, layout) {
+  if (!ctx.evidence?.length || layout === "cover") return [];
+  const summary = referenceSummary(ctx);
+  if (!summary) return [];
+  const darkFooter = layout === "closing";
+  return [
+    text(ctx.theme, 126, 976, 1500, 28, `References: ${summary}`, 15, darkFooter ? "#dbe4f0" : ctx.theme.muted, { align: "left", rtl: ctx.rtl })
+  ];
+}
+
+function investorSpec(layout, ctx) {
+  const topic = ctx.title;
+  const evidence = evidenceForLayout(ctx, layout);
+  const evidenceCards = (ctx.evidence || []).slice(0, 3).map((item) => item.label);
+  const specs = {
+    problem: {
+      title: "Operational Waste Is Expensive",
+      lead: `${topic} targets recurring waste, staffing volatility, and margin leakage.`,
+      cards: ["Food waste", "Labor gaps", "Margin pressure"],
+      metric: "3-8%"
+    },
+    solution: {
+      title: "AI Control Layer for Operations",
+      lead: "Forecast demand, guide staffing, and surface waste-reduction actions before losses compound.",
+      cards: ["Forecast", "Schedule", "Optimize"],
+      metric: "24/7"
+    },
+    market: {
+      title: "Large, Underserved Market",
+      lead: "Restaurants operate on thin margins and need practical automation that improves daily decisions.",
+      cards: ["Restaurants", "Multi-site groups", "Enterprise foodservice"],
+      metric: "$900B+"
+    },
+    product: {
+      title: "Product Workflow",
+      lead: "The platform converts sales, inventory, and labor signals into recommended manager actions.",
+      cards: ["Connect data", "Predict demand", "Recommend action"],
+      metric: "3-step"
+    },
+    "business-model": {
+      title: "Revenue Model",
+      lead: "SaaS subscription pricing expands with locations, modules, and operational data volume.",
+      cards: ["Base SaaS", "Premium AI", "Enterprise rollout"],
+      metric: "NRR"
+    },
+    traction: {
+      title: "Validation Milestones",
+      lead: "The investor story should prove usage, measurable savings, and repeatable expansion.",
+      cards: ["Pilot savings", "Weekly usage", "Expansion intent"],
+      metric: "Pilot"
+    },
+    gtm: {
+      title: "Go-to-Market Motion",
+      lead: "Start with high-pain operators, prove savings quickly, then expand across groups.",
+      cards: ["Pilot", "Prove ROI", "Expand sites"],
+      metric: "Land"
+    },
+    financials: {
+      title: "Margin Expansion Model",
+      lead: "Value comes from waste reduction, tighter labor planning, and better purchasing decisions.",
+      cards: ["Waste down", "Labor tuned", "Margins up"],
+      metric: "ROI"
+    },
+    ask: {
+      title: "Investment Ask",
+      lead: "Use funds to accelerate product, customer proof, and repeatable go-to-market execution.",
+      cards: ["Product", "Pilots", "GTM"],
+      metric: "18 mo"
+    }
+  };
+  const spec = specs[layout] || specs.solution;
+  if (evidence) {
+    spec.metric = evidence.metric;
+    const label = evidence.label.length > 46 ? `${evidence.label.slice(0, 43)}...` : evidence.label;
+    spec.lead = `${spec.lead} Evidence: ${label}.`;
+  }
+  if (evidenceCards.length >= 3 && ["problem", "market", "traction", "financials"].includes(layout)) {
+    spec.cards = evidenceCards;
+  }
+  return spec;
+}
+
+function playbookSpec(layout, ctx) {
+  const topic = ctx.title;
+  const evidence = evidenceForLayout(ctx, layout);
+  const sourceMetric = evidence?.metric || "";
+  const specs = {
+    "client-context": {
+      title: "Client Context",
+      lead: `${topic} is framed around the buyer's current priorities, constraints, and decision pressure.`,
+      cards: ["Current state", "Decision pressure", "Success criteria"],
+      metric: sourceMetric || "Fit"
+    },
+    "buyer-pain": {
+      title: "Buyer Pain",
+      lead: "The proposal names operational friction in plain language and connects it to measurable business impact.",
+      cards: ["Cost of delay", "Workflow drag", "Missed upside"],
+      metric: sourceMetric || "Pain"
+    },
+    "proposed-solution": {
+      title: "Recommended Solution",
+      lead: "A focused recommendation ties the offering to the buyer's outcome, not just a feature list.",
+      cards: ["Outcome", "Approach", "Proof"],
+      metric: "3-part"
+    },
+    differentiators: {
+      title: "Why This Approach Wins",
+      lead: "The deck separates the offer from alternatives with clear advantages the client can defend internally.",
+      cards: ["Sharper insight", "Lower risk", "Faster path"],
+      metric: "Edge"
+    },
+    proof: {
+      title: "Proof Points",
+      lead: "Evidence gives the buyer confidence that the promised value is credible and repeatable.",
+      cards: (ctx.evidence || []).slice(0, 3).map((item) => item.label),
+      metric: sourceMetric || "Proof"
+    },
+    scope: {
+      title: "Scope of Work",
+      lead: "A professional proposal clarifies what is included, what is optional, and how success is measured.",
+      cards: ["Included", "Optional", "Measured"],
+      metric: "SOW"
+    },
+    implementation: {
+      title: "Implementation Plan",
+      lead: "The plan reduces perceived risk by showing phases, owners, and decision gates.",
+      cards: ["Mobilize", "Execute", "Optimize"],
+      metric: "30-60-90"
+    },
+    "commercial-case": {
+      title: "Commercial Case",
+      lead: "The investment story connects spend to impact, payback, and strategic value.",
+      cards: ["Cost", "Return", "Decision"],
+      metric: sourceMetric || "ROI"
+    },
+    "next-steps": {
+      title: "Decision Path",
+      lead: "Close with an easy path to yes: owners, timing, and the smallest next commitment.",
+      cards: ["Confirm scope", "Align terms", "Launch"],
+      metric: "Next"
+    },
+    "learning-outcomes": {
+      title: "Learning Outcomes",
+      lead: "Training starts by making the target capabilities explicit and measurable.",
+      cards: ["Know", "Practice", "Apply"],
+      metric: "3 goals"
+    },
+    "learner-context": {
+      title: "Learner Context",
+      lead: "The deck meets learners where they are and names the gap between current and desired behavior.",
+      cards: ["Starting point", "Common blocker", "Desired behavior"],
+      metric: sourceMetric || "Gap"
+    },
+    "core-concepts": {
+      title: "Core Concepts",
+      lead: "Concepts are grouped into a small mental model learners can remember under pressure.",
+      cards: ["Principle", "Pattern", "Example"],
+      metric: "3 ideas"
+    },
+    "practice-loop": {
+      title: "Practice Loop",
+      lead: "Practice turns the content from explanation into skill by adding repetition and feedback.",
+      cards: ["Try", "Feedback", "Repeat"],
+      metric: sourceMetric || "Loop"
+    },
+    "example-walkthrough": {
+      title: "Worked Example",
+      lead: "A concrete scenario shows exactly how the learner should apply the method.",
+      cards: ["Scenario", "Decision", "Result"],
+      metric: "Demo"
+    },
+    checklist: {
+      title: "Execution Checklist",
+      lead: "A concise checklist helps learners transfer the training into daily work.",
+      cards: ["Before", "During", "After"],
+      metric: "Ready"
+    },
+    assessment: {
+      title: "Assessment",
+      lead: "The deck defines what good looks like so progress can be observed and coached.",
+      cards: ["Criteria", "Practice task", "Feedback"],
+      metric: "Score"
+    },
+    "rollout-plan": {
+      title: "Rollout Plan",
+      lead: "Training becomes operational when the rollout names cadence, ownership, and reinforcement.",
+      cards: ["Launch", "Coach", "Reinforce"],
+      metric: "30 days"
+    }
+  };
+  const spec = specs[layout] || specs["client-context"];
+  if (evidence && !spec.lead.includes("Evidence")) {
+    const label = evidence.label.length > 46 ? `${evidence.label.slice(0, 43)}...` : evidence.label;
+    spec.lead = `${spec.lead} Evidence: ${label}.`;
+  }
+  if (!spec.cards.length) spec.cards = ["Proof", "Signal", "Decision"];
+  return spec;
+}
+
+function isPlaybookLayout(layout) {
+  return salesLayouts.includes(layout) || trainingLayouts.includes(layout);
+}
+
+function planForLayout(layout, index, ctx) {
+  const library = {
+    cover: ["Set a premium first impression", "Frame the topic and promised outcome"],
+    agenda: ["Turn the prompt into a clear roadmap", "Show the audience what will be covered"],
+    why: ["Build urgency and context", "Connect the topic to a measurable outcome"],
+    benefits: ["Present the core benefits", "Reduce the value story into three strong points"],
+    metrics: ["Add decision-grade numbers", "Make the value feel tangible"],
+    pillars: ["Break the method into pillars", "Show what repeats in practice"],
+    roadmap: ["Turn intent into steps", "Clarify sequence and priorities"],
+    habits: ["Make execution practical", "Translate strategy into daily behavior"],
+    mistakes: ["Name avoidable failure modes", "Help the audience avoid wasted effort"],
+    closing: ["Close with a clear action", "Leave the audience with a next step"],
+    origin: ["Open the origin story", "Place the audience inside the first scene and explain why it mattered"],
+    timeline: ["Show decisive milestones", "Turn dates into a cinematic sequence of choices and inflection points"],
+    scale: ["Make scale visceral", "Use one hero number and supporting context to make growth memorable"],
+    "financial-power": ["Translate success into economics", "Connect revenue, profit, and market value to the narrative"],
+    acquisitions: ["Explain strategic moves", "Show how acquisitions changed the shape of the platform or category"],
+    transformation: ["Frame the strategic pivot", "Contrast the old identity with the future-facing ambition"],
+    culture: ["Reveal the operating code", "Show the values and behaviors that made the story repeatable"],
+    lessons: ["Extract transferable lessons", "Turn the case study into practical principles for the audience"],
+    problem: ["Name the expensive pain", "Make the investor feel the urgency"],
+    solution: ["Show the product answer", "Explain the wedge in plain language"],
+    market: ["Size the opportunity", "Show why the category can support venture scale"],
+    vision: ["Frame the venture-scale vision", "Show why the opportunity can become a category, not just a feature"],
+    product: ["Demonstrate workflow", "Make the product feel operationally real"],
+    "how-it-works": ["Explain the experience loop", "Make the product mechanics feel simple, repeatable, and defensible"],
+    "business-model": ["Explain monetization", "Show how value turns into revenue"],
+    traction: ["Show validation path", "Name proof points investors expect"],
+    gtm: ["Describe acquisition motion", "Connect buyer, channel, and expansion"],
+    financials: ["Show margin logic", "Summarize unit economics and upside"],
+    team: ["Build founder credibility", "Connect the team's strengths to product, market, and execution risk"],
+    funding: ["Make the round concrete", "Tie the requested capital to product, growth, and proof milestones"],
+    ask: ["Close with use of funds", "Make the next investor decision clear"],
+    "client-context": ["Frame the buyer's world", "Show that the proposal understands the client's priorities"],
+    "buyer-pain": ["Name the costly friction", "Connect pain to urgency and business impact"],
+    "proposed-solution": ["Present the recommendation", "Tie the offer to outcomes rather than features"],
+    differentiators: ["Explain why this path wins", "Give the buyer language to defend the choice"],
+    proof: ["Show credible proof", "Use supplied evidence to reduce perceived risk"],
+    scope: ["Clarify the scope", "Make deliverables, options, and success measures explicit"],
+    implementation: ["Reduce delivery risk", "Show phases, owners, and decision gates"],
+    "commercial-case": ["Make the economics clear", "Connect investment to return and strategic value"],
+    "next-steps": ["Close the buying path", "Make the next commitment easy and concrete"],
+    "learning-outcomes": ["Define target capabilities", "Make the learning promise measurable"],
+    "learner-context": ["Meet learners where they are", "Name the gap between current and desired behavior"],
+    "core-concepts": ["Teach the mental model", "Keep the concepts memorable and usable"],
+    "practice-loop": ["Turn content into skill", "Explain repetition, feedback, and transfer"],
+    "example-walkthrough": ["Demonstrate the method", "Show a realistic scenario and decision path"],
+    checklist: ["Create transfer aid", "Give learners a simple action checklist"],
+    assessment: ["Define mastery", "Show how progress will be observed and coached"],
+    "rollout-plan": ["Operationalize training", "Name cadence, owners, and reinforcement"]
+  };
+  const [brief, speakerNotes] = library[layout] || ["Deepen the story", "Add an execution-ready detail"];
+  const tailoredNotes = ctx.brand?.configured
+    ? `${speakerNotes} Tailor the language for ${ctx.strategy.audience} with a ${ctx.brand.tone.toLowerCase()} tone.`
+    : speakerNotes;
+  const sourceNotes = ctx.evidence?.length ? `${tailoredNotes} Reference supplied evidence where it supports the claim.` : tailoredNotes;
+  return {
+    slide: index + 1,
+    layout,
+    role: roleForLayout(layout),
+    brief,
+    speakerNotes: sourceNotes,
+    audience: ctx.strategy.audience,
+    qaFocus: ctx.rtl ? "Premium RTL Arabic typography, hierarchy, contrast, and no clipped text" : "Hierarchy, overflow, contrast, and alignment"
+  };
+}
+
+function isArabicInvestor(ctx) {
+  return !!(ctx?.rtl && ctx.theme?.investorDark);
+}
+
+function isArabicCinematic(ctx) {
+  return !!(ctx?.rtl && ctx.theme?.cinematicStory);
+}
+
+function isArabicLuxe(ctx) {
+  return !!(ctx?.rtl && ctx.theme?.rtlPremium && !ctx.theme?.investorDark);
+}
+
+function arabicFont(ctx) {
+  return ctx.theme.fontArabic || "Tajawal";
+}
+
+function latinFont(ctx) {
+  return ctx.theme.fontLatin || "Playfair Display";
+}
+
+function arabicText(ctx, x, y, w, h, value, size, fill, opts = {}) {
+  return text(ctx.theme, x, y, w, h, value, size, fill, {
+    rtl: true,
+    align: opts.align || "right",
+    bold: opts.bold,
+    lineHeight: opts.lineHeight || 1.18,
+    font: opts.font || arabicFont(ctx)
+  });
+}
+
+function latinText(ctx, x, y, w, h, value, size, fill, opts = {}) {
+  return text(ctx.theme, x, y, w, h, value, size, fill, {
+    align: opts.align || "left",
+    bold: opts.bold,
+    lineHeight: opts.lineHeight || 1.05,
+    font: opts.font || latinFont(ctx)
+  });
+}
+
+function arabicInvestorBodyText(ctx, x, y, w, h, value, size, fill, opts = {}) {
+  return arabicText(ctx, x, y, w, h, value, size, fill, {
+    ...opts,
+    font: opts.font || ctx.theme.fontBody || arabicFont(ctx),
+    lineHeight: opts.lineHeight || 1.45
+  });
+}
+
+function arabicInvestorSectionLabel(layout, index) {
+  const labels = {
+    cover: "البداية",
+    vision: "الرؤية",
+    problem: "المشكلة",
+    solution: "الحل",
+    "how-it-works": "طريقة العمل",
+    product: "التجربة",
+    market: "السوق",
+    traction: "التحقق",
+    "business-model": "النموذج",
+    gtm: "النمو",
+    financials: "الأرقام",
+    funding: "التمويل",
+    ask: "التمويل",
+    team: "الفريق",
+    closing: "الخاتمة"
+  };
+  return `${String(index + 1).padStart(2, "0")} · ${labels[layout] || "القصة"}`;
+}
+
+function arabicInvestorTitle(ctx, layout, index) {
+  const planned = ctx.plan?.[index]?.title;
+  if (planned && !/Set a premium|Name the expensive|Show the product|Size the opportunity|Deepen the story/i.test(planned)) return planned;
+  const titles = {
+    cover: ctx.title,
+    vision: "الرؤية التي تغيّر طريقة اللعب",
+    problem: "الفجوة التي تفتح السوق",
+    solution: "الحل الذي يحوّل الفكرة إلى تجربة",
+    "how-it-works": "كيف تعمل التجربة؟",
+    product: "كيف تعمل التجربة؟",
+    traction: "إشارات تحقق مبكرة",
+    market: "سوق ضخم ينتظر تجربة جديدة",
+    "business-model": "نموذج قيمة قابل للتوسع",
+    gtm: "مسار نمو واضح",
+    financials: "اقتصاديات تدعم القرار",
+    team: "فريق يعرف المنتج والسوق",
+    funding: "الجولة الحالية واستخدام التمويل",
+    ask: "الجولة الحالية واستخدام التمويل",
+    closing: "من فكرة إلى تجربة قابلة للنمو"
+  };
+  return titles[layout] || labelFromLayout(layout);
+}
+
+function arabicInvestorLead(ctx, layout) {
+  const brand = arabicBrandName(ctx);
+  const map = {
+    cover: ctx.subtitle || "عرض مستثمرين عربي مبني بهوية تنفيذية داكنة وقابل للتصدير.",
+    vision: `${brand} يحوّل الفكرة من وعد نظري إلى تجربة يلمسها المستخدم بسرعة، مع قصة استثمارية سهلة الدفاع عنها.`,
+    problem: "السوق لا يعاني من نقص الأفكار؛ يعاني من فجوة بين الفكرة، التجربة الأولى، والدليل الذي يقنع رأس المال.",
+    solution: "نختصر المسار من النص إلى منتج أو عرض قابل للتجربة، ونحافظ على وضوح الرسالة وجودة التنفيذ العربي.",
+    "how-it-works": "تسلسل بسيط: صياغة الفكرة، بناء التجربة، إطلاق النسخة الأولى، ثم قياس ما يستحق التوسع.",
+    product: "المنتج يجب أن يبدو عمليًا من أول نظرة: مدخل واضح، مخرجات قابلة للتعديل، وتجربة يمكن مشاركتها فورًا.",
+    traction: "التحقق لا يحتاج أرقامًا كثيرة؛ يحتاج إشارات مبكرة منظمة تشرح لماذا الآن ولماذا هذا الفريق.",
+    market: "الفرصة تكبر عندما يجتمع جمهور واسع مع احتياج متكرر وتجربة لا تزال بطيئة أو صعبة التنفيذ.",
+    "business-model": "القيمة تتوسع عندما يتحول الاستخدام المتكرر إلى اشتراك، توسع فرق، أو قنوات شراكة واضحة.",
+    gtm: "نبدأ من شريحة تملك ألمًا متكررًا، ثم نبني قناة دخول قابلة للقياس قبل التوسع.",
+    financials: "الأرقام هنا ليست زينة؛ هي ربط بين التمويل، سرعة التعلم، والمرحلة التالية من النمو.",
+    team: "الفريق المقنع هو الذي يجمع حس المنتج، فهم المستخدم، والقدرة على تحويل الرؤية إلى تنفيذ.",
+    funding: "الجولة تموّل التعلم الأسرع: المنتج، النمو، والعمليات التي تثبت قابلية التوسع.",
+    ask: "الجولة تموّل التعلم الأسرع: المنتج، النمو، والعمليات التي تثبت قابلية التوسع.",
+    closing: "الخطوة التالية واضحة: تجربة أقوى، تحقق أسرع، وقصة جاهزة للنقاش مع المستثمرين."
+  };
+  return map[layout] || `هذا القسم يترجم ${ctx.title} إلى رسالة استثمارية عربية واضحة ومصممة بإيقاع فاخر.`;
+}
+
+function arabicInvestorMetrics(ctx) {
+  const supplied = (ctx.evidence || []).slice(0, 4).map((item) => ({
+    metric: item.metric,
+    label: item.label || item.raw || "إشارة تحقق داعمة"
+  })).filter((item) => item.metric);
+  if (supplied.length) return supplied;
+  return [
+    { metric: "10x", label: "تسريع بناء النسخة القابلة للتجربة من الفكرة الأولى" },
+    { metric: "30 يوم", label: "إطار تحقق سريع قبل مضاعفة الاستثمار في النمو" },
+    { metric: "3 محاور", label: "منتج، سوق، وتمويل ضمن قصة واحدة قابلة للعرض" },
+    { metric: "24/7", label: "تجربة توليد وتعديل تعمل كلما احتاجها الفريق" }
+  ];
+}
+
+function arabicInvestorProcess(ctx) {
+  const gameSignal = /game|play|لعب|ألعاب|لعبة|playabl/i.test(ctx.prompt || "");
+  if (gameSignal) {
+    return [
+      ["الفكرة", "يدخل المستخدم وصفًا قصيرًا لما يريد أن يلعبه أو يشرحه."],
+      ["المشهد", "نحوّل الوصف إلى بنية تفاعل وقواعد وتجربة بصرية أولية."],
+      ["التجربة", "تظهر نسخة قابلة للعب والمشاركة بسرعة بدل انتظار دورة إنتاج طويلة."],
+      ["التحقق", "نقيس التفاعل ونقرر أي الأفكار تستحق البناء والتوسع."]
+    ];
+  }
+  return [
+    ["المدخل", "نلتقط الفكرة والجمهور والهدف في brief قصير وواضح."],
+    ["البناء", "نولد البنية، النصوص، البطاقات، والمؤشرات ضمن قالب قابل للتعديل."],
+    ["المراجعة", "نفحص الاتجاه، اللغة، التسلسل، والجاهزية قبل التصدير."],
+    ["التصدير", "نخرج PPTX وPDF ومشروع HTML يحافظ على الطبقات القابلة للتعديل."]
+  ];
+}
+
+function arabicInvestorChrome(ctx, index, layout) {
+  const t = ctx.theme;
+  const section = arabicInvestorSectionLabel(layout, index);
+  const brand = arabicBrandName(ctx);
+  return [
+    el("shape", 0, 0, W, H, { fill: t.bg, stroke: t.bg }),
+    el("shape", 120, 68, 1680, 1, { fill: "#2A2A38", stroke: "#2A2A38" }),
+    el("shape", 1538, 68, 262, 3, { fill: t.accent, stroke: t.accent }),
+    arabicText(ctx, 1240, 28, 560, 30, brand, 20, t.ink, { bold: true, lineHeight: 1 }),
+    latinText(ctx, 120, 30, 150, 26, `${String(index + 1).padStart(2, "0")} / ${String(ctx.count).padStart(2, "0")}`, 17, t.muted, { bold: true }),
+    arabicInvestorBodyText(ctx, 1240, 86, 560, 28, section, 15, t.accent, { bold: true, lineHeight: 1 }),
+    el("shape", 120, 1010, 1680, 1, { fill: "#2A2A38", stroke: "#2A2A38" }),
+    arabicInvestorBodyText(ctx, 1120, 1026, 680, 26, "عرض عربي استثماري · قابل للتعديل والتصدير", 17, t.muted, { lineHeight: 1 }),
+    latinText(ctx, 120, 1028, 380, 24, "DECKFORGE / INVESTOR DARK", 14, t.muted, { bold: true })
+  ];
+}
+
+function arabicInvestorMetricText(ctx, x, y, w, h, value, size, fill, opts = {}) {
+  return countArabicChars(value)
+    ? arabicText(ctx, x, y, w, h, value, size, fill, opts)
+    : latinText(ctx, x, y, w, h, value, size, fill, { ...opts, font: opts.font || latinFont(ctx) });
+}
+
+function arabicInvestorCard(ctx, x, y, w, h, eyebrow, title, detail, opts = {}) {
+  const t = ctx.theme;
+  const fill = opts.fill || "#12121A";
+  const stroke = opts.stroke || "#2A2A38";
+  const accent = opts.accent || t.accent;
+  return [
+    el("shape", x, y, w, h, { fill, stroke, radius: 8 }),
+    el("shape", x + w - 4, y, 4, h, { fill: accent, stroke: accent }),
+    arabicInvestorBodyText(ctx, x + 30, y + 28, w - 60, 26, eyebrow, 15, accent, { bold: true, lineHeight: 1 }),
+    arabicText(ctx, x + 30, y + 70, w - 60, 68, title, opts.titleSize || 30, t.ink, { bold: true, lineHeight: 1.16 }),
+    arabicInvestorBodyText(ctx, x + 30, y + 154, w - 60, h - 184, detail, opts.bodySize || 18, opts.muted || t.muted)
+  ];
+}
+
+function arabicInvestorMiniStat(ctx, x, y, w, metric, label, opts = {}) {
+  const t = ctx.theme;
+  return [
+    el("shape", x, y, w, 142, { fill: opts.fill || "#12121A", stroke: opts.stroke || "#2A2A38", radius: 8 }),
