@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeckForge</title>
+  <link rel="stylesheet" href="./styles.css?v=13">
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="left-rail" aria-label="Deck controls">
+      <div class="brand">
+        <div class="brand-mark">D</div>
+        <div>
+          <h1>DeckForge</h1>
+          <p>AI-style slide studio</p>
+        </div>
+      </div>
+
+      <section class="panel prompt-panel">
+        <label for="prompt">Request</label>
+        <textarea id="prompt" spellcheck="true">Create a professional 10-slide presentation about the benefits of learning English and practical methods to master it.</textarea>
+
+        <div class="control-grid">
+          <label>
+            Slides
+            <input id="slideCount" type="number" min="4" max="14" value="10">
+          </label>
+          <label>
+            Language
+            <select id="language">
+              <option value="auto">Auto</option>
+              <option value="en">English</option>
+              <option value="ar">Arabic / RTL</option>
+            </select>
+          </label>
+          <label>
+            Style
+            <select id="theme">
+              <option value="executive">Executive Navy</option>
+              <option value="arabicLuxe">Arabic Luxe RTL</option>
+              <option value="arabicInvestor">Arabic Investor Dark</option>
+              <option value="arabicCinematic">Arabic Cinematic Story</option>
+              <option value="editorial">Editorial White</option>
+              <option value="venture">Venture Dark</option>
+            </select>
+          </label>
+          <label>
+            Density
+            <select id="density">
+              <option value="balanced">Balanced</option>
+              <option value="dense">Board-ready</option>
+              <option value="light">Visual</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="button-row">
+          <button id="outlineBtn">Draft Outline</button>
+          <button id="generateBtn" class="primary">Generate</button>
+          <button id="qaBtn">QA</button>
+        </div>
+      </section>
+
+      <section class="panel brand-brief-panel">
+        <label for="brandName">Brand Brief</label>
+        <div class="control-grid">
+          <label>
+            Brand
+            <input id="brandName" type="text" placeholder="Company or project name">
+          </label>
+          <label>
+            Audience
+            <input id="audienceInput" type="text" placeholder="Board, investors, clients">
+          </label>
+          <label>
+            Goal
+            <select id="deckGoal">
+              <option value="Executive decision">Executive decision</option>
+              <option value="Raise investment">Raise investment</option>
+              <option value="Win a client">Win a client</option>
+              <option value="Train a team">Train a team</option>
+              <option value="Launch a product">Launch a product</option>
+            </select>
+          </label>
+          <label>
+            Tone
+            <select id="tone">
+              <option value="Board-ready">Board-ready</option>
+              <option value="Investor sharp">Investor sharp</option>
+              <option value="Client-ready">Client-ready</option>
+              <option value="Training clear">Training clear</option>
+            </select>
+          </label>
+          <label class="accent-control">
+            Accent
+            <input id="brandAccent" type="color" value="#9a6a16">
+          </label>
+        </div>
+      </section>
+
+      <section class="panel template-panel">
+        <label for="templateName">Templates</label>
+        <input id="templateName" type="text" placeholder="Template name">
+        <select id="templateSelect"></select>
+        <div class="button-row">
+          <button id="saveTemplateBtn">Save Template</button>
+          <button id="applyTemplateBtn">Apply Template</button>
+        </div>
+        <button id="deleteTemplateBtn" class="subtle">Delete Template</button>
+      </section>
+
+      <section class="panel reference-panel">
+        <label for="referenceDeckFile">Reference Deck</label>
+        <input id="referenceDeckFile" type="file" accept=".pptx,.zip,.slides,.html,.htm,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/zip,text/html">
+        <div class="button-row">
+          <button id="analyzeReferenceBtn">Analyze</button>
+          <button id="applyReferenceBtn">Use Style</button>
+        </div>
+        <button id="importReferenceBtn" class="subtle">Open Editable</button>
+        <button id="useReferenceOutlineBtn" class="subtle">Use Outline</button>
+        <button id="sampleReferenceBtn" class="subtle">Load Sample Style</button>
+        <p id="referenceDeckStatus" class="panel-status"></p>
+      </section>
+
+      <section class="panel evidence-panel">
+        <label for="evidenceInput">Evidence Brief</label>
+        <textarea id="evidenceInput" spellcheck="true" placeholder="$42K/mo | pilot savings | Q2 operator pilot&#10;28% | lower food waste | POS + inventory sample"></textarea>
+      </section>
+
+      <section class="panel source-panel">
+        <label for="sourceInput">Source Brief</label>
+        <textarea id="sourceInput" spellcheck="true" placeholder="Gartner note | 18% forecast accuracy lift after CRM cleanup | https://example.com&#10;CRM audit | Managers save 12 hrs/week when stale opportunities are automated"></textarea>
+      </section>
+
+      <section class="panel document-panel">
+        <label for="documentFiles">Documents</label>
+        <input id="documentFiles" type="file" multiple accept=".txt,.md,.csv,.json,.html,.htm,text/plain,text/markdown,text/csv,application/json">
+        <textarea id="documentInput" spellcheck="true" placeholder="Paste notes, research excerpts, CSV rows, or imported file text."></textarea>
+        <button id="clearDocumentsBtn" class="subtle">Clear Documents</button>
+      </section>
+
+      <section class="panel edit-panel">
+        <label for="editRequest">AI Edit Selected Slide</label>
+        <textarea id="editRequest" spellcheck="true" placeholder="Example: make it more executive, shorten the title, add stronger metrics"></textarea>
+        <div class="button-row">
+          <button id="editBtn">Apply Edit</button>
+          <button id="fixBtn">Auto Fix QA</button>
+        </div>
+        <button id="variantBtn" class="subtle">Create Slide Variant</button>
+        <button id="polishBtn" class="subtle">Polish Deck</button>
+      </section>
+
+      <section class="panel save-panel">
+        <label for="savePointSelect">Save Points</label>
+        <select id="savePointSelect"></select>
+        <div class="button-row">
+          <button id="savePointBtn">Save Point</button>
+          <button id="restorePointBtn">Restore</button>
+        </div>
+        <button id="deletePointBtn" class="subtle">Delete Save Point</button>
+      </section>
+
+      <section class="panel export-panel">
+        <div class="button-row stacked">
+          <button id="presentBtn">Present Deck</button>
+          <button id="pdfBtn">Export PDF</button>
+          <button id="pptxBtn" class="primary">Export PPTX</button>
+          <button id="projectBtn">Export .slides Project</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Presentation workspace</p>
+          <h2 id="deckTitle">Untitled deck</h2>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Workspace tabs">
+          <button class="tab active" data-tab="preview">Preview</button>
+          <button class="tab" data-tab="object">Object</button>
+          <button class="tab" data-tab="templates">Templates</button>
+          <button class="tab" data-tab="agent">Agent</button>
+          <button class="tab" data-tab="reference">Reference</button>
+          <button class="tab" data-tab="deckDna">Deck DNA</button>
+          <button class="tab" data-tab="briefing">Briefing</button>
+          <button class="tab" data-tab="outline">Outline</button>
+          <button class="tab" data-tab="storyboard">Storyboard</button>
+          <button class="tab" data-tab="plan">Plan</button>
+          <button class="tab" data-tab="evidence">Evidence</button>
+          <button class="tab" data-tab="sources">Sources</button>
+          <button class="tab" data-tab="documents">Documents</button>
+          <button class="tab" data-tab="references">References</button>
+          <button class="tab" data-tab="charts">Charts</button>
+          <button class="tab" data-tab="factCheck">Fact Check</button>
+          <button class="tab" data-tab="review">Review</button>
+          <button class="tab" data-tab="variants">Variants</button>
+          <button class="tab" data-tab="code">Code</button>
+          <button class="tab" data-tab="files">Files</button>
+          <button class="tab" data-tab="qa">QA</button>
+        </div>
+      </header>
+
+      <div class="content-grid">
+        <nav class="slide-strip" aria-label="Slides" id="slideStrip"></nav>
+
+        <section class="stage">
+          <div id="previewPane" class="pane active">
+            <div class="preview-shell" id="previewShell">
+              <div id="slideCanvas" class="slide-canvas"></div>
+            </div>
+          </div>
+          <div id="objectPane" class="pane">
+            <div id="objectOutput" class="object-output"></div>
+          </div>
+          <div id="templatesPane" class="pane">
+            <div id="templateOutput" class="template-output"></div>
+          </div>
+          <div id="agentPane" class="pane">
+            <div id="agentOutput" class="agent-output"></div>
+          </div>
+          <div id="referencePane" class="pane">
+            <div id="referenceOutput" class="reference-output"></div>
+          </div>
+          <div id="deckDnaPane" class="pane">
+            <div id="deckDnaOutput" class="deck-dna-output"></div>
+          </div>
+          <div id="briefingPane" class="pane">
+            <div id="briefingOutput" class="briefing-output"></div>
+          </div>
+          <div id="outlinePane" class="pane">
+            <div id="outlineOutput" class="outline-output"></div>
+          </div>
+          <div id="storyboardPane" class="pane">
+            <div id="storyboardOutput" class="storyboard-output"></div>
+          </div>
+          <div id="planPane" class="pane">
+            <div id="planOutput" class="plan-output"></div>
+          </div>
+          <div id="evidencePane" class="pane">
+            <div id="evidenceOutput" class="evidence-output"></div>
+          </div>
+          <div id="sourcesPane" class="pane">
+            <div id="sourcesOutput" class="sources-output"></div>
+          </div>
+          <div id="documentsPane" class="pane">
+            <div id="documentsOutput" class="documents-output"></div>
+          </div>
+          <div id="referencesPane" class="pane">
+            <div id="referencesOutput" class="references-output"></div>
+          </div>
+          <div id="chartsPane" class="pane">
+            <div id="chartsOutput" class="charts-output"></div>
+          </div>
+          <div id="factCheckPane" class="pane">
+            <div id="factCheckOutput" class="fact-check-output"></div>
+          </div>
+          <div id="reviewPane" class="pane">
+            <div id="reviewOutput" class="review-output"></div>
+          </div>
+          <div id="variantsPane" class="pane">
+            <div id="variantsOutput" class="variants-output"></div>
+          </div>
+          <div id="codePane" class="pane">
+            <pre id="codeOutput"></pre>
+          </div>
+          <div id="filesPane" class="pane">
+            <div id="fileTree" class="file-tree"></div>
+          </div>
+          <div id="qaPane" class="pane">
+            <div id="qaOutput" class="qa-output"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <section id="presenterOverlay" class="presenter-overlay" aria-hidden="true">
+    <header class="presenter-bar">
+      <div>
+        <p class="eyebrow">Presentation view</p>
+        <h2 id="presenterTitle">DeckForge</h2>
+      </div>
+      <div class="presenter-actions">
+        <button id="presenterPrev" aria-label="Previous slide">Prev</button>
+        <span id="presenterCount">1 / 1</span>
+        <button id="presenterNext" aria-label="Next slide">Next</button>
+        <button id="presenterClose" aria-label="Close presentation view">Close</button>
+      </div>
+    </header>
+    <div class="presenter-layout">
+      <div class="presenter-stage" id="presenterStage">
+        <div id="presenterCanvas" class="slide-canvas"></div>
+      </div>
+      <aside class="presenter-notes">
+        <h3 id="presenterSlideTitle">Slide title</h3>
+        <p id="presenterNotes">Speaker notes</p>
+      </aside>
+    </div>
+  </section>
+
+  <script src="./engine?v=71"></script>
+</body>
+</html>
