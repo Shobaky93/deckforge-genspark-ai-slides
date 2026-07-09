@@ -1,0 +1,1669 @@
+    arabicInvestorMetricText(ctx, x + 24, y + 24, w - 48, 48, metric, metricSize(metric, opts.metricSize || 42), opts.accent || t.accent, { bold: true, align: "right" }),
+    arabicInvestorBodyText(ctx, x + 24, y + 82, w - 48, 42, label, opts.labelSize || 16, opts.muted || t.muted, { lineHeight: 1.32 })
+  ];
+}
+
+function makeArabicInvestorSlide(layout, index, ctx) {
+  const t = ctx.theme;
+  const title = arabicInvestorTitle(ctx, layout, index);
+  const file = `${String(index + 1).padStart(2, "0")}-${layout}.html`;
+  const lead = arabicInvestorLead(ctx, layout);
+  const metrics = arabicInvestorMetrics(ctx);
+  let elements = arabicInvestorChrome(ctx, index, layout);
+
+  if (layout === "cover") {
+    const heroSize = title.length > 46 ? 60 : title.length > 26 ? 74 : 96;
+    elements = [
+      ...arabicInvestorChrome(ctx, index, layout),
+      el("shape", 118, 150, 650, 730, { fill: "#12121A", stroke: "#2A2A38", radius: 8 }),
+      el("shape", 170, 212, 420, 420, { fill: "#1A1A24", stroke: "#2A2A38", radius: 8 }),
+      el("shape", 230, 285, 300, 34, { fill: t.accent, stroke: t.accent, radius: 8 }),
+      el("shape", 230, 368, 410, 34, { fill: "#2A2A38", stroke: "#2A2A38", radius: 8 }),
+      el("shape", 230, 452, 260, 34, { fill: t.accent2, stroke: t.accent2, radius: 8 }),
+      el("shape", 172, 710, 540, 1, { fill: "#2A2A38", stroke: "#2A2A38" }),
+      arabicInvestorBodyText(ctx, 172, 744, 540, 58, "هوية داكنة، إيقاع تحريري، وطبقات قابلة للتعديل في PPTX.", 22, t.muted),
+      arabicInvestorBodyText(ctx, 990, 170, 790, 32, "عرض المستثمرين", 20, t.accent, { bold: true, lineHeight: 1 }),
+      arabicText(ctx, 760, 242, 1020, 230, title, heroSize, t.ink, { bold: true, lineHeight: 1.04 }),
+      arabicInvestorBodyText(ctx, 900, 510, 880, 96, lead, 27, t.muted),
+      el("shape", 1518, 660, 262, 4, { fill: t.accent, stroke: t.accent }),
+      latinText(ctx, 1080, 684, 700, 52, (ctx.brand?.name || "STARTUP").toUpperCase(), 42, t.ink, { bold: true, align: "right", font: latinFont(ctx) }),
+      ...arabicInvestorMiniStat(ctx, 780, 804, 300, metrics[0]?.metric || "10x", metrics[0]?.label || "تسريع التحقق"),
+      ...arabicInvestorMiniStat(ctx, 1120, 804, 300, metrics[1]?.metric || "30 يوم", metrics[1]?.label || "زمن تحقق واضح"),
+      ...arabicInvestorMiniStat(ctx, 1460, 804, 300, metrics[2]?.metric || "3 محاور", metrics[2]?.label || "قصة استثمارية")
+    ];
+  } else if (layout === "vision") {
+    elements.push(
+      latinText(ctx, 125, 150, 400, 130, "01", 118, t.accent, { bold: true }),
+      arabicText(ctx, 620, 166, 1160, 130, title, 66, t.ink, { bold: true, lineHeight: 1.08 }),
+      arabicInvestorBodyText(ctx, 680, 332, 1100, 90, lead, 25, t.muted),
+      el("shape", 340, 474, 1220, 240, { fill: "#12121A", stroke: "#2A2A38", radius: 8 }),
+      arabicText(ctx, 420, 528, 1060, 92, "نحو منصة تجعل بناء التجارب أسرع من شرحها.", 42, t.ink, { bold: true, lineHeight: 1.18 }),
+      arabicInvestorBodyText(ctx, 420, 650, 1060, 44, "الرؤية الاستثمارية تصبح أقوى عندما يرى المستثمر المنتج كحركة سوق لا كميزة منفصلة.", 20, t.muted),
+      ...arabicInvestorCard(ctx, 124, 788, 500, 140, "WHY NOW", "الطلب يتسارع", "فرق أكثر تريد مخرجات فورية قابلة للمشاركة."),
+      ...arabicInvestorCard(ctx, 710, 788, 500, 140, "WEDGE", "تجربة أولى", "ندخل من لحظة الحاجة ثم نتوسع إلى سير عمل كامل."),
+      ...arabicInvestorCard(ctx, 1296, 788, 500, 140, "OUTCOME", "قرار أوضح", "القصة تربط الاستخدام المتكرر بالتمويل القادم.")
+    );
+  } else if (layout === "problem") {
+    const cards = [
+      ["الاحتكاك", "الفكرة لا تتحول بسرعة", "الفرق تقضي وقتًا طويلًا بين صياغة الفكرة وبناء شيء يمكن عرضه أو اختباره."],
+      ["الجودة", "المخرجات العربية متذبذبة", "اللغة والاتجاه والتسلسل البصري غالبًا تحتاج تصحيحًا يدويًا قبل العرض."],
+      ["الدليل", "صعوبة إقناع السوق", "بدون تجربة أولى واضحة، يبقى القرار مبنيًا على الوعد لا على سلوك المستخدم."]
+    ];
+    elements.push(
+      arabicText(ctx, 620, 156, 1160, 120, title, 66, t.ink, { bold: true, lineHeight: 1.08 }),
+      arabicInvestorBodyText(ctx, 760, 312, 1020, 82, lead, 24, t.muted)
+    );
+    cards.forEach((card, i) => {
+      elements.push(...arabicInvestorCard(ctx, 140 + i * 585, 486, 500, 310, card[0], card[1], card[2], { titleSize: 34 }));
+    });
+    elements.push(
+      el("shape", 140, 850, 1640, 1, { fill: "#2A2A38", stroke: "#2A2A38" }),
+      arabicInvestorBodyText(ctx, 900, 880, 880, 46, "المشكلة الاستثمارية: كل يوم تأخير يقلل سرعة التعلم ويزيد تكلفة الوصول إلى دليل حقيقي.", 22, t.accent, { bold: true })
+    );
+  } else if (layout === "solution") {
+    const cards = [
+      ["المدخل", "Brief بسيط", "فكرة، جمهور، هدف، ونبرة في نقطة بداية واحدة."],
+      ["المعالجة", "بنية ذكية", "تحويل الفكرة إلى قصة، مشاهد، بطاقات، ومؤشرات."],
+      ["المخرج", "تجربة قابلة للتعديل", "HTML وPPTX وPDF مع طبقات نص وشكل واضحة."]
+    ];
+    elements.push(
+      arabicText(ctx, 560, 150, 1220, 124, title, 64, t.ink, { bold: true, lineHeight: 1.08 }),
+      arabicInvestorBodyText(ctx, 760, 310, 1020, 88, lead, 24, t.muted),
+      el("shape", 134, 450, 760, 390, { fill: "#15151E", stroke: "#2A2A38", radius: 8 }),
+      arabicText(ctx, 190, 520, 640, 90, "من نص خام إلى تجربة جاهزة للنقاش.", 42, t.ink, { bold: true, lineHeight: 1.18 }),
+      arabicInvestorBodyText(ctx, 190, 650, 640, 74, "هذا هو الفرق بين مولد محتوى عام ومنصة إنتاج عروض وتجارب تتعامل مع اللغة العربية كمسار تصميم كامل.", 22, t.muted)
+    );
+    cards.forEach((card, i) => {
+      elements.push(...arabicInvestorCard(ctx, 980, 448 + i * 132, 620, 104, card[0], card[1], card[2], { titleSize: 25, bodySize: 15 }));
+    });
+  } else if (["how-it-works", "product", "gtm", "business-model"].includes(layout)) {
+    const steps = arabicInvestorProcess(ctx);
+    elements.push(
+      arabicText(ctx, 560, 146, 1220, 116, title, 64, t.ink, { bold: true, lineHeight: 1.08 }),
+      arabicInvestorBodyText(ctx, 730, 294, 1050, 82, lead, 24, t.muted),
+      el("shape", 250, 592, 1420, 2, { fill: t.accent, stroke: t.accent })
+    );
+    steps.forEach((step, i) => {
+      const x = 155 + i * 430;
+      elements.push(
+        el("shape", x + 140, 548, 86, 86, { fill: i === 1 ? t.accent : "#12121A", stroke: i === 1 ? t.accent : "#2A2A38", radius: 8 }),
+        latinText(ctx, x + 160, 572, 46, 34, String(i + 1).padStart(2, "0"), 26, i === 1 ? t.bg : t.accent, { bold: true, align: "center" }),
+        ...arabicInvestorCard(ctx, x, 684, 360, 190, "STEP", step[0], step[1], { titleSize: 30, bodySize: 17 })
+      );
+    });
+  } else if (["traction", "market", "financials"].includes(layout)) {
+    elements.push(
+      arabicText(ctx, 560, 142, 1220, 120, title, 64, t.ink, { bold: true, lineHeight: 1.08 }),
+      arabicInvestorBodyText(ctx, 760, 300, 1020, 82, lead, 24, t.muted)
+    );
+    metrics.slice(0, 4).forEach((item, i) => {
+      const x = i % 2 === 0 ? 150 : 965;
+      const y = i < 2 ? 460 : 690;
+      elements.push(...arabicInvestorMiniStat(ctx, x, y, 660, item.metric, item.label, { metricSize: 60, labelSize: 20 }));
+    });
+    elements.push(
+      el("shape", 1560, 452, 42, 372, { fill: "#1A1A24", stroke: "#2A2A38", radius: 8 }),
+      el("shape", 1620, 540, 42, 284, { fill: t.accent, stroke: t.accent, radius: 8 }),
+      el("shape", 1680, 606, 42, 218, { fill: t.accent2, stroke: t.accent2, radius: 8 }),
+      latinText(ctx, 1514, 850, 250, 28, "NOW / NEXT / SCALE", 16, t.muted, { bold: true, align: "center" })
+    );
+  } else if (layout === "team") {
+    const teamCards = [
+      ["المنتج", "رؤية تجربة", "صياغة تدفق يجعل القيمة مفهومة من أول استخدام."],
+      ["الهندسة", "تنفيذ قابل للتوسع", "تحويل النماذج إلى منظومة موثوقة وقابلة للتكرار."],
+      ["النمو", "تعلم من السوق", "قنوات دخول وتجارب تحقق تقيس الطلب الحقيقي."]
+    ];
+    elements.push(
+      arabicText(ctx, 580, 148, 1200, 120, title, 64, t.ink, { bold: true, lineHeight: 1.08 }),
+      arabicInvestorBodyText(ctx, 780, 306, 1000, 80, lead, 24, t.muted)
+    );
+    teamCards.forEach((card, i) => {
+      const x = 140 + i * 585;
+      elements.push(
+        el("shape", x + 150, 430, 200, 200, { fill: "#1A1A24", stroke: "#2A2A38", radius: 8 }),
+        el("shape", x + 205, 485, 90, 90, { fill: i === 1 ? t.accent : "#2A2A38", stroke: i === 1 ? t.accent : "#2A2A38", radius: 8 }),
+        ...arabicInvestorCard(ctx, x, 678, 500, 190, card[0], card[1], card[2], { titleSize: 30 })
+      );
+    });
+  } else if (["funding", "ask"].includes(layout)) {
+    const askMetric = metrics[0]?.metric || "Seed";
+    elements.push(
+      arabicText(ctx, 560, 142, 1220, 120, title, 64, t.ink, { bold: true, lineHeight: 1.08 }),
+      arabicInvestorBodyText(ctx, 760, 300, 1020, 82, lead, 24, t.muted),
+      el("shape", 170, 430, 660, 390, { fill: t.accent, stroke: t.accent, radius: 8 }),
+      arabicInvestorMetricText(ctx, 230, 500, 540, 88, askMetric, metricSize(askMetric, 78), t.bg, { bold: true, align: "right" }),
+      arabicText(ctx, 230, 612, 540, 70, "الجولة المطلوبة", 38, t.bg, { bold: true, lineHeight: 1.12 }),
+      arabicInvestorBodyText(ctx, 230, 710, 540, 54, "تُستخدم لتسريع المنتج، بناء قنوات النمو، وإثبات المرحلة التالية.", 22, "#21160D"),
+      ...arabicInvestorCard(ctx, 930, 430, 700, 122, "01", "تطوير المنتج", "تحسين التجربة، جودة المخرجات، وسرعة التخصيص.", { titleSize: 30, bodySize: 17 }),
+      ...arabicInvestorCard(ctx, 930, 588, 700, 122, "02", "النمو والتحقق", "تجارب دخول للسوق، قياس استخدام، وشراكات أولية.", { titleSize: 30, bodySize: 17 }),
+      ...arabicInvestorCard(ctx, 930, 746, 700, 122, "03", "العمليات والموثوقية", "بنية تشغيل تسمح بالتوسع دون فقدان الجودة.", { titleSize: 30, bodySize: 17 })
+    );
+  } else if (layout === "closing") {
+    elements = [
+      ...arabicInvestorChrome(ctx, index, layout),
+      el("shape", 132, 148, 1656, 760, { fill: "#12121A", stroke: "#2A2A38", radius: 8 }),
+      el("shape", 1430, 148, 358, 760, { fill: t.accent, stroke: t.accent, radius: 8 }),
+      arabicInvestorBodyText(ctx, 1180, 224, 520, 34, "الخطوة التالية", 21, t.bg, { bold: true, lineHeight: 1 }),
+      arabicText(ctx, 460, 292, 820, 170, title, 70, t.ink, { bold: true, lineHeight: 1.08 }),
+      arabicInvestorBodyText(ctx, 470, 508, 800, 96, lead, 28, t.muted),
+      ...arabicInvestorMiniStat(ctx, 470, 692, 270, metrics[0]?.metric || "10x", "سرعة تحقق"),
+      ...arabicInvestorMiniStat(ctx, 790, 692, 270, metrics[1]?.metric || "30 يوم", "إطار تجربة"),
+      ...arabicInvestorMiniStat(ctx, 1110, 692, 270, metrics[2]?.metric || "3 محاور", "قصة قابلة للدفاع"),
+      latinText(ctx, 1500, 486, 220, 44, "THANK YOU", 30, t.bg, { bold: true, align: "center" }),
+      arabicText(ctx, 1490, 548, 240, 78, "لنحوّل الفكرة إلى تجربة.", 31, t.bg, { bold: true, align: "center", lineHeight: 1.18 })
+    ];
+  } else {
+    elements.push(
+      arabicText(ctx, 560, 154, 1220, 120, title, 64, t.ink, { bold: true, lineHeight: 1.08 }),
+      arabicInvestorBodyText(ctx, 760, 310, 1020, 82, lead, 24, t.muted)
+    );
+    metrics.slice(0, 3).forEach((item, i) => {
+      elements.push(...arabicInvestorCard(ctx, 150 + i * 585, 500, 500, 260, String(i + 1).padStart(2, "0"), item.metric, item.label, { titleSize: 40 }));
+    });
+  }
+
+  return {
+    id: `slide-${index + 1}`,
+    filename: file,
+    layout,
+    title,
+    brief: ctx.plan[index]?.brief || "",
+    speakerNotes: ctx.plan[index]?.speakerNotes || "",
+    qaFocus: ctx.plan[index]?.qaFocus || "Arabic investor RTL typography, dark editorial chrome, hierarchy, and export safety",
+    elements
+  };
+}
+
+function cinematicBodyText(ctx, x, y, w, h, value, size, fill, opts = {}) {
+  return arabicText(ctx, x, y, w, h, value, size, fill, {
+    ...opts,
+    font: opts.font || ctx.theme.fontBody || "Tajawal",
+    lineHeight: opts.lineHeight || 1.5
+  });
+}
+
+function cinematicScriptText(ctx, x, y, w, h, value, size, fill, opts = {}) {
+  return latinText(ctx, x, y, w, h, value, size, fill, {
+    ...opts,
+    font: opts.font || ctx.theme.fontScript || "Cormorant Garamond",
+    lineHeight: opts.lineHeight || 1.15
+  });
+}
+
+function cinematicSectionLabel(layout, index) {
+  const labels = {
+    cover: "دراسة حالة",
+    origin: "البداية",
+    timeline: "المحطات",
+    scale: "التوسع",
+    "financial-power": "القوة المالية",
+    acquisitions: "الاستحواذات",
+    transformation: "التحول",
+    culture: "الثقافة",
+    lessons: "الدروس",
+    closing: "الخاتمة"
+  };
+  const english = {
+    cover: "CASE STUDY",
+    origin: "ORIGIN",
+    timeline: "TIMELINE",
+    scale: "SCALE",
+    "financial-power": "FINANCE",
+    acquisitions: "ACQUISITIONS",
+    transformation: "TRANSFORMATION",
+    culture: "CULTURE",
+    lessons: "LESSONS",
+    closing: "FINALE"
+  };
+  return `${String(index + 1).padStart(2, "0")} · ${labels[layout] || "القصة"} · ${english[layout] || "STORY"}`;
+}
+
+function cinematicTitle(ctx, layout, index) {
+  const planned = ctx.plan?.[index]?.title;
+  if (planned && !/Open the origin|Show decisive|Make scale|Translate success|Deepen the story/i.test(planned)) return planned;
+  const titles = {
+    cover: ctx.title,
+    origin: "البداية التي غيّرت اتجاه الشبكة",
+    timeline: "محطات صنعت التاريخ الرقمي",
+    scale: "إمبراطورية من المستخدمين",
+    "financial-power": "أرقام تعيد تعريف النجاح",
+    acquisitions: "صفقات غيّرت قواعد اللعبة",
+    transformation: "من منصة اجتماعية إلى رؤية ميتافيرس",
+    culture: "ثقافة تحرك إمبراطورية",
+    lessons: "دروس قابلة للتكرار",
+    closing: "كل إمبراطورية بدأت بمشهد صغير"
+  };
+  return titles[layout] || labelFromLayout(layout);
+}
+
+function cinematicLead(ctx, layout) {
+  const subject = ctx.title;
+  const map = {
+    cover: "رحلة عربية مصممة كفيلم قصير: مشهد افتتاحي، محطات فارقة، أرقام كبرى، ثم درس يبقى.",
+    origin: "كل قصة نجاح تبدأ بلحظة ضيقة: غرفة، فكرة، وقرار صغير يفتح بابًا أكبر من أصحابه.",
+    timeline: "التاريخ لا يتحرك بخط مستقيم؛ يتحرك عبر قرارات حاسمة تصنع منعطفات لا تعود كما كانت.",
+    scale: "الأرقام هنا ليست زينة؛ هي طريقة لإدراك حجم الفكرة عندما تصبح جزءًا من حياة البشر اليومية.",
+    "financial-power": "حين تتحول الشبكة إلى اقتصاد كامل، تصبح الإيرادات والهوامش لغة أخرى للقوة.",
+    acquisitions: "الاستحواذات لا تشتري منتجات فقط؛ أحيانًا تشتري مستقبلًا قبل أن ينتبه إليه السوق.",
+    transformation: "التحول الحقيقي يحدث عندما تعيد الشركة تعريف نفسها قبل أن يجبرها السوق على ذلك.",
+    culture: "وراء كل منصة ضخمة نظام سلوك: سرعة، جرأة، تكرار، وقدرة على التعلم تحت الضغط.",
+    lessons: "القيمة الكبرى في دراسة الحالة ليست الإعجاب بالقصة؛ بل استخراج قواعد يمكن تطبيقها.",
+    closing: "في النهاية، تبقى القصة تذكيرًا بأن الأفكار الصغيرة تكبر عندما تجد إيقاعها ونظامها."
+  };
+  return map[layout] || `هذا الفصل يحول ${subject} إلى مشهد عربي بصري، أنيق، ومصمم للعرض بثقة.`;
+}
+
+function cinematicMetrics(ctx) {
+  const supplied = (ctx.evidence || []).slice(0, 4).map((item) => ({
+    metric: item.metric,
+    label: item.label || item.raw || "إشارة داعمة"
+  })).filter((item) => item.metric);
+  if (supplied.length) return supplied;
+  return [
+    { metric: "3B+", label: "مستخدم شهريًا عبر المنصة أو المنظومة" },
+    { metric: "22", label: "عامًا من التحول والتوسع المستمر" },
+    { metric: "$1T+", label: "قيمة سوقية صنعتها شبكة عالمية" },
+    { metric: "10", label: "محطات سردية في رحلة واحدة" }
+  ];
+}
+
+function cinematicImagePanel(ctx, x, y, w, h, variant = "wide") {
+  const t = ctx.theme;
+  const elements = [
+    el("imageBlock", x, y, w, h, { fill: variant === "warm" ? "#1A120B" : "#071018", stroke: "#211B14" }),
+    el("shape", x, y, w, h, { fill: variant === "wide" ? "#0B0B0B" : "#111111", stroke: "#111111" }),
+    el("shape", x + Math.round(w * 0.08), y + Math.round(h * 0.68), Math.round(w * 0.62), 3, { fill: t.accent, stroke: t.accent }),
+    el("shape", x + Math.round(w * 0.16), y + Math.round(h * 0.2), Math.round(w * 0.42), Math.round(h * 0.08), { fill: "#2A2115", stroke: "#2A2115" }),
+    el("shape", x + Math.round(w * 0.22), y + Math.round(h * 0.34), Math.round(w * 0.52), Math.round(h * 0.08), { fill: "#3A2A14", stroke: "#3A2A14" }),
+    el("shape", x + Math.round(w * 0.28), y + Math.round(h * 0.48), Math.round(w * 0.34), Math.round(h * 0.08), { fill: t.accent, stroke: t.accent })
+  ];
+  return elements;
+}
+
+function cinematicChrome(ctx, index, layout) {
+  const t = ctx.theme;
+  return [
+    el("shape", 0, 0, W, H, { fill: t.bg, stroke: t.bg }),
+    el("shape", 120, 80, 1680, 1, { fill: "#2A2418", stroke: "#2A2418" }),
+    el("shape", 1720, 80, 80, 2, { fill: t.accent, stroke: t.accent }),
+    cinematicBodyText(ctx, 1050, 38, 750, 30, cinematicSectionLabel(layout, index), 18, t.accent, { bold: true, lineHeight: 1 }),
+    latinText(ctx, 120, 40, 160, 28, `${String(index + 1).padStart(2, "0")} / ${String(ctx.count).padStart(2, "0")}`, 18, t.accent, { bold: true }),
+    el("shape", 120, 980, 1680, 1, { fill: "#2A2418", stroke: "#2A2418" }),
+    cinematicBodyText(ctx, 120, 1002, 520, 28, "قصة نجاح عربية · عرض سينمائي قابل للتصدير", 18, t.muted, { lineHeight: 1 }),
+    cinematicBodyText(ctx, 1080, 1000, 720, 30, "سرد بصري عربي · قابل للتعديل والتصدير", 18, t.muted, { lineHeight: 1 })
+  ];
+}
+
+function cinematicMetric(ctx, x, y, w, metric, label, opts = {}) {
+  const t = ctx.theme;
+  return [
+    latinText(ctx, x, y, w, 74, metric, metricSize(metric, opts.size || 64), opts.accent || t.accent2, { bold: true, align: opts.align || "right" }),
+    cinematicBodyText(ctx, x, y + 88, w, 52, label, opts.labelSize || 20, opts.muted || t.ink, { align: opts.align || "right", lineHeight: 1.35 })
+  ];
+}
+
+function makeArabicCinematicSlide(layout, index, ctx) {
+  const t = ctx.theme;
+  const title = cinematicTitle(ctx, layout, index);
+  const file = `${String(index + 1).padStart(2, "0")}-${layout}.html`;
+  const lead = cinematicLead(ctx, layout);
+  const metrics = cinematicMetrics(ctx);
+  let elements = cinematicChrome(ctx, index, layout);
+
+  if (layout === "cover") {
+    elements = [
+      ...cinematicImagePanel(ctx, 0, 0, W, H, "wide"),
+      el("shape", 0, 0, 1180, H, { fill: "#0A0A0A", stroke: "#0A0A0A" }),
+      el("shape", 0, 0, W, 120, { fill: "#0A0A0A", stroke: "#0A0A0A" }),
+      el("shape", 120, 120, 80, 1, { fill: t.accent, stroke: t.accent }),
+      cinematicScriptText(ctx, 220, 98, 360, 34, "A Case Study", 24, t.accent),
+      cinematicBodyText(ctx, 220, 230, 760, 34, "دراسة حالة · ريادة الأعمال الرقمية", 22, t.accent, { bold: true, lineHeight: 1 }),
+      arabicText(ctx, 120, 336, 880, 250, title, title.length > 38 ? 72 : 108, t.ink, { bold: true, lineHeight: 1.15 }),
+      cinematicScriptText(ctx, 120, 626, 860, 62, "From a small room to a digital empire", 42, t.accent2),
+      cinematicBodyText(ctx, 120, 720, 820, 86, lead, 27, "#C7BFAF"),
+      el("shape", 120, 968, 1680, 1, { fill: "#3A2A14", stroke: "#3A2A14" }),
+      cinematicBodyText(ctx, 120, 1000, 520, 26, "عرض تعليمي · ١٠ سلايدات", 17, t.muted, { lineHeight: 1 }),
+      cinematicScriptText(ctx, 1510, 998, 290, 28, "MMXXVI · Vol. I", 22, t.accent)
+    ];
+  } else if (layout === "origin") {
+    elements.push(
+      ...cinematicImagePanel(ctx, 0, 0, 760, H, "warm"),
+      el("shape", 760, 0, 1160, H, { fill: t.bg, stroke: t.bg }),
+      arabicText(ctx, 890, 170, 850, 150, title, 74, t.ink, { bold: true, lineHeight: 1.1 }),
+      cinematicBodyText(ctx, 930, 356, 810, 84, lead, 24, t.muted),
+      el("shape", 930, 520, 620, 1, { fill: t.accent, stroke: t.accent }),
+      arabicText(ctx, 930, 568, 690, 116, "الفكرة الأولى لا تحتاج جمهورًا ضخمًا؛ تحتاج مشكلة واضحة وشجاعة كافية للبدء.", 38, t.ink, { bold: true, lineHeight: 1.35 }),
+      cinematicMetric(ctx, 930, 780, 250, "2004", "بداية القصة", { size: 58 }),
+      cinematicMetric(ctx, 1230, 780, 260, "1", "غرفة جامعية", { size: 58 }),
+      cinematicMetric(ctx, 1530, 780, 230, "0", "خطة مضمونة", { size: 58 })
+    );
+  } else if (layout === "timeline") {
+    const years = ["2004", "2008", "2012", "2017", "2021"];
+    const labels = ["التأسيس", "١٠٠ مليون", "الاكتتاب", "٢ مليار", "Meta"];
+    elements.push(
+      latinText(ctx, 120, 130, 260, 140, "02", 130, "#18130C", { bold: true }),
+      arabicText(ctx, 690, 158, 1110, 118, title, 70, t.ink, { bold: true, lineHeight: 1.08 }),
+      cinematicScriptText(ctx, 1040, 306, 760, 42, "Two decades that redefined connection", 30, t.muted, { align: "right" }),
+      el("shape", 180, 640, 1560, 2, { fill: t.accent, stroke: t.accent })
+    );
+    years.forEach((year, i) => {
+      const x = 220 + i * 340;
+      elements.push(
+        el("shape", x, 626, 28, 28, { fill: i === years.length - 1 ? t.accent2 : t.accent, stroke: t.accent, radius: 14 }),
+        latinText(ctx, x - 66, i % 2 ? 706 : 480, 160, 70, year, 58, t.accent, { bold: true, align: "center" }),
+        cinematicBodyText(ctx, x - 90, i % 2 ? 780 : 552, 210, 56, labels[i], 22, t.ink, { align: "center", bold: true })
+      );
+    });
+  } else if (layout === "scale") {
+    elements = [
+      ...cinematicImagePanel(ctx, 0, 0, W, H, "wide"),
+      el("shape", 0, 0, W, H, { fill: "#050505", stroke: "#050505" }),
+      ...cinematicChrome(ctx, index, layout),
+      arabicText(ctx, 600, 142, 1200, 110, title, 74, t.ink, { bold: true, lineHeight: 1.08 }),
+      cinematicScriptText(ctx, 780, 284, 840, 42, "One story becomes planetary when usage becomes ritual", 28, t.muted, { align: "center" }),
+      latinText(ctx, 410, 352, 1100, 260, metrics[0]?.metric || "3B+", 220, t.accent2, { bold: true, align: "center" }),
+      cinematicBodyText(ctx, 500, 608, 920, 60, metrics[0]?.label || "مستخدم شهريًا", 34, t.ink, { align: "center", bold: true }),
+      ...cinematicMetric(ctx, 330, 792, 300, metrics[1]?.metric || "22", metrics[1]?.label || "عامًا", { align: "center" }),
+      ...cinematicMetric(ctx, 810, 792, 300, metrics[2]?.metric || "$1T+", metrics[2]?.label || "قيمة", { align: "center" }),
+      ...cinematicMetric(ctx, 1290, 792, 300, metrics[3]?.metric || "10", metrics[3]?.label || "محطات", { align: "center" })
+    ];
+  } else if (layout === "financial-power") {
+    elements.push(
+      ...cinematicImagePanel(ctx, 1200, 0, 720, H, "warm"),
+      arabicText(ctx, 120, 160, 880, 130, title, 70, t.ink, { bold: true, lineHeight: 1.1 }),
+      cinematicScriptText(ctx, 120, 322, 680, 40, "The financial anatomy of a digital superpower", 28, t.muted),
+      el("shape", 120, 406, 80, 2, { fill: t.accent, stroke: t.accent }),
+      ...cinematicMetric(ctx, 120, 456, 680, metrics[2]?.metric || "$164.5B", "إيرادات سنوية كبرى", { size: 118 }),
+      ...cinematicMetric(ctx, 120, 700, 310, metrics[0]?.metric || "$62B", "صافي ربح", { size: 66 }),
+      ...cinematicMetric(ctx, 510, 700, 330, metrics[1]?.metric || "$1T+", "قيمة سوقية", { size: 66 }),
+      cinematicBodyText(ctx, 120, 910, 850, 52, "عندما يصبح المنتج عادة يومية، تتحول العلاقة مع المستخدم إلى قوة مالية يصعب تكرارها.", 24, t.accent2)
+    );
+  } else if (layout === "acquisitions") {
+    const cards = [
+      ["2012", "Instagram", "$1B", "شراء شبكة الصور قبل أن تتحول إلى لغة جيل كامل."],
+      ["2014", "WhatsApp", "$19B", "امتلاك طبقة المراسلة التي تربط الأسواق والعائلات."],
+      ["2014", "Oculus", "$2B", "رهان مبكر على مستقبل الوجود الرقمي والتجارب الغامرة."]
+    ];
+    elements.push(
+      arabicText(ctx, 570, 142, 1230, 118, title, 70, t.ink, { bold: true, lineHeight: 1.08 }),
+      cinematicScriptText(ctx, 900, 292, 900, 42, "Strategic moves that widened the empire", 28, t.muted, { align: "right" })
+    );
+    cards.forEach((card, i) => {
+      const x = 120 + i * 570;
+      elements.push(
+        el("shape", x, 410, 520, 500, { fill: i === 1 ? "#17130D" : "#101010", stroke: i === 1 ? t.accent : "#2A2418", radius: 4 }),
+        latinText(ctx, x + 42, 456, 420, 32, card[0], 24, i === 1 ? t.accent2 : t.accent, { bold: true }),
+        el("shape", x + 42, 502, 52, 1, { fill: t.accent, stroke: t.accent }),
+        latinText(ctx, x + 42, 544, 420, 72, card[1], 54, t.ink, { bold: true }),
+        latinText(ctx, x + 42, 642, 420, 86, card[2], 78, t.accent2, { bold: true }),
+        cinematicBodyText(ctx, x + 42, 760, 420, 82, card[3], 21, "#C7BFAF")
+      );
+    });
+  } else if (layout === "transformation") {
+    elements.push(
+      arabicText(ctx, 560, 142, 1240, 116, title, 68, t.ink, { bold: true, lineHeight: 1.1 }),
+      cinematicBodyText(ctx, 860, 292, 940, 70, lead, 23, t.muted),
+      ...cinematicImagePanel(ctx, 120, 430, 760, 410, "wide"),
+      ...cinematicImagePanel(ctx, 1040, 430, 760, 410, "warm"),
+      latinText(ctx, 190, 470, 310, 44, "FACEBOOK", 34, t.accent, { bold: true }),
+      arabicText(ctx, 190, 690, 540, 78, "منصة اجتماعية", 42, t.ink, { bold: true }),
+      latinText(ctx, 1110, 470, 240, 44, "META", 34, t.accent2, { bold: true }),
+      arabicText(ctx, 1110, 690, 540, 78, "رؤية للعالم الغامر", 42, t.ink, { bold: true }),
+      el("shape", 920, 616, 80, 2, { fill: t.accent, stroke: t.accent }),
+      latinText(ctx, 912, 560, 100, 44, "TO", 28, t.muted, { align: "center", bold: true })
+    );
+  } else if (layout === "culture") {
+    const values = [
+      ["— I —", "التحرّك السريع", "Move Fast", "تجريب سريع، تعلم أسرع، وقرارات لا تنتظر الكمال."],
+      ["— II —", "الجرأة", "Be Bold", "رهانات كبيرة قبل أن تصبح بديهية في السوق."],
+      ["— III —", "الأثر", "Impact", "تركيز على ما يغير السلوك لا ما يملأ الشرائح."],
+      ["— IV —", "الانفتاح", "Be Open", "ثقافة مشاركة تجعل التعلم مؤسسيًا لا فرديًا."]
+    ];
+    elements.push(
+      latinText(ctx, 120, 86, 180, 160, "\"", 160, "#18130C", { bold: true }),
+      arabicText(ctx, 560, 142, 1240, 116, title, 68, t.ink, { bold: true, lineHeight: 1.1 }),
+      cinematicScriptText(ctx, 870, 292, 930, 42, "The operating code behind repeated invention", 28, t.muted, { align: "right" })
+    );
+    values.forEach((item, i) => {
+      const x = i % 2 === 0 ? 160 : 1010;
+      const y = i < 2 ? 420 : 690;
+      elements.push(
+        cinematicScriptText(ctx, x, y, 130, 28, item[0], 24, t.accent),
+        arabicText(ctx, x, y + 42, 640, 58, item[1], 42, t.ink, { bold: true }),
+        latinText(ctx, x, y + 106, 260, 32, item[2], 24, t.accent, { bold: true }),
+        cinematicBodyText(ctx, x, y + 150, 620, 58, item[3], 20, "#C7BFAF")
+      );
+    });
+  } else if (layout === "lessons") {
+    const lessons = [
+      ["01", "ابدأ من احتياج ضيق", "أقوى القصص لا تبدأ بعالم كامل؛ تبدأ بمستخدم واضح."],
+      ["02", "حوّل النمو إلى نظام", "النمو العابر لا يكفي؛ يجب أن يصبح التكرار جزءًا من المنتج."],
+      ["03", "اشترِ المستقبل مبكرًا", "الاستحواذ الذكي يختصر الزمن عندما تكون الرؤية دقيقة."],
+      ["04", "أعد تعريف نفسك", "الشركات التي تبقى تتغير قبل أن تفقد حقها في التغيير."]
+    ];
+    elements.push(
+      arabicText(ctx, 560, 140, 1240, 116, title, 70, t.ink, { bold: true, lineHeight: 1.08 }),
+      cinematicBodyText(ctx, 820, 292, 980, 64, lead, 23, t.muted)
+    );
+    lessons.forEach((item, i) => {
+      const y = 420 + i * 128;
+      elements.push(
+        latinText(ctx, 1340, y, 110, 54, item[0], 46, t.accent, { bold: true, align: "center" }),
+        el("shape", 1260, y + 66, 500, 1, { fill: "#2A2418", stroke: "#2A2418" }),
+        arabicText(ctx, 560, y, 680, 52, item[1], 38, t.ink, { bold: true }),
+        cinematicBodyText(ctx, 350, y + 58, 890, 46, item[2], 20, "#C7BFAF")
+      );
+    });
+  } else if (layout === "closing") {
+    elements = [
+      ...cinematicImagePanel(ctx, 0, 0, W, H, "wide"),
+      el("shape", 0, 0, W, H, { fill: "#050505", stroke: "#050505" }),
+      el("shape", 860, 190, 200, 1, { fill: t.accent, stroke: t.accent }),
+      cinematicScriptText(ctx, 810, 218, 300, 36, "FINALE", 28, t.accent, { align: "center" }),
+      el("shape", 860, 272, 200, 1, { fill: t.accent, stroke: t.accent }),
+      latinText(ctx, 700, 318, 520, 130, "\"", 132, "#21180D", { bold: true, align: "center" }),
+      arabicText(ctx, 420, 450, 1080, 160, title, 64, t.ink, { bold: true, align: "center", lineHeight: 1.32 }),
+      cinematicScriptText(ctx, 500, 650, 920, 54, "The lesson is not the size of the empire, but the discipline of the first move.", 30, t.accent2, { align: "center" }),
+      ...cinematicMetric(ctx, 540, 790, 220, metrics[1]?.metric || "22", "عامًا", { align: "center", size: 46 }),
+      ...cinematicMetric(ctx, 850, 790, 260, metrics[0]?.metric || "3B+", "مستخدم", { align: "center", size: 46 }),
+      ...cinematicMetric(ctx, 1200, 790, 260, metrics[2]?.metric || "$1T+", "قيمة", { align: "center", size: 46 }),
+      cinematicBodyText(ctx, 120, 1000, 360, 28, "شكراً لكم", 18, t.muted, { lineHeight: 1 }),
+      cinematicScriptText(ctx, 1490, 998, 310, 28, `${String(index + 1).padStart(2, "0")} / ${String(ctx.count).padStart(2, "0")} · Fin.`, 20, t.accent, { align: "right" })
+    ];
+  } else {
+    elements.push(
+      arabicText(ctx, 560, 150, 1240, 116, title, 70, t.ink, { bold: true, lineHeight: 1.08 }),
+      cinematicBodyText(ctx, 820, 300, 980, 76, lead, 24, t.muted),
+      ...cinematicImagePanel(ctx, 120, 438, 700, 420, "wide"),
+      ...cinematicMetric(ctx, 990, 520, 560, metrics[0]?.metric || "3B+", metrics[0]?.label || "إشارة كبرى")
+    );
+  }
+
+  return {
+    id: `slide-${index + 1}`,
+    filename: file,
+    layout,
+    title,
+    brief: ctx.plan[index]?.brief || "",
+    speakerNotes: ctx.plan[index]?.speakerNotes || "",
+    qaFocus: ctx.plan[index]?.qaFocus || "Arabic cinematic RTL storytelling, image rhythm, gold editorial hierarchy, and export safety",
+    elements
+  };
+}
+
+function arabicSectionLabel(layout, index) {
+  const labels = {
+    cover: "البداية",
+    agenda: "المسار",
+    why: "السياق",
+    problem: "المشكلة",
+    "client-context": "سياق الجمهور",
+    "buyer-pain": "الألم",
+    solution: "الحل",
+    "proposed-solution": "التوصية",
+    product: "التجربة",
+    market: "السوق",
+    benefits: "القيمة",
+    pillars: "المحاور",
+    differentiators: "التميّز",
+    proof: "الإثبات",
+    scope: "النطاق",
+    metrics: "المؤشرات",
+    traction: "التحقق",
+    "business-model": "نموذج القيمة",
+    gtm: "النمو",
+    roadmap: "الخطة",
+    implementation: "التنفيذ",
+    "rollout-plan": "الإطلاق",
+    financials: "الأرقام",
+    "commercial-case": "الجدوى",
+    "learning-outcomes": "المخرجات",
+    "learner-context": "المتعلمون",
+    "core-concepts": "المفاهيم",
+    "practice-loop": "التطبيق",
+    "example-walkthrough": "المثال",
+    checklist: "القائمة",
+    assessment: "التقييم",
+    ask: "الطلب",
+    "next-steps": "القرار",
+    closing: "الخاتمة"
+  };
+  const chapters = ["الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس", "السابع", "الثامن", "التاسع", "العاشر"];
+  return `الفصل ${chapters[Math.max(0, Math.min(index, chapters.length - 1))]} · ${labels[layout] || "العرض"}`;
+}
+
+function arabicBrandName(ctx) {
+  return ctx.brand?.name || ctx.title || "DeckForge";
+}
+
+function arabicObjective(ctx) {
+  const objective = ctx.brand?.objective || "";
+  const map = {
+    "Executive decision": "قرار تنفيذي واضح",
+    "Raise investment": "رفع جولة استثمارية",
+    "Win a client": "إقناع عميل جديد",
+    "Train a team": "تدريب فريق بكفاءة",
+    "Launch a product": "إطلاق منتج بثقة"
+  };
+  return map[objective] || objective || "عرض احترافي قابل للتعديل";
+}
+
+function arabicChrome(ctx, index, layout, opts = {}) {
+  const t = ctx.theme;
+  const dark = !!opts.dark;
+  const bg = dark ? t.bg : t.paper;
+  const ink = dark ? t.white : t.ink;
+  const muted = dark ? "#CBD5E1" : "#94A3B8";
+  const elements = [
+    el("shape", 0, 0, W, H, { fill: bg, stroke: bg }),
+    el("shape", 0, 0, W, 80, { fill: bg, stroke: dark ? t.bg : "#E5E7EB" })
+  ];
+  if (!dark) {
+    elements.push(el("shape", 0, 79, W, 1, { fill: "#E5E7EB", stroke: "#E5E7EB" }));
+  }
+  elements.push(arabicText(ctx, 120, 42, 430, 34, `${arabicBrandName(ctx)}.`, 26, ink, { bold: true }));
+  elements.push(latinText(ctx, 1700, 42, 130, 28, `${String(index + 1).padStart(2, "0")} / ${String(ctx.count).padStart(2, "0")}`, 18, muted, { bold: true, align: "left" }));
+  if (!opts.noKicker) {
+    elements.push(el("shape", 120, 154, 48, 2, { fill: t.accent, stroke: t.accent }));
+    elements.push(arabicText(ctx, 190, 138, 760, 42, arabicSectionLabel(layout, index), 20, dark ? t.accent : t.ink, { lineHeight: 1.1 }));
+  }
+  return elements;
+}
+
+function arabicFooterBand(ctx, label, detail, dark = false) {
+  const t = ctx.theme;
+  const bg = dark ? t.bg : "#F8FAFC";
+  const main = dark ? t.white : t.ink;
+  const muted = dark ? "#CBD5E1" : t.muted;
+  return [
+    el("shape", 0, 970, W, 110, { fill: bg, stroke: bg }),
+    el("shape", 120, 970, 4, 110, { fill: t.accent, stroke: t.accent }),
+    arabicText(ctx, 160, 994, 520, 24, label, 15, t.accent, { lineHeight: 1.05 }),
+    arabicText(ctx, 160, 1026, 680, 34, detail, 22, main, { bold: true, lineHeight: 1.1 }),
+    arabicText(ctx, 1030, 1006, 790, 50, "تصميم عربي تنفيذي · قابل للتعديل والتصدير", 20, muted, { lineHeight: 1.35 })
+  ];
+}
+
+function arabicSlideTitle(ctx, layout, index) {
+  const planned = ctx.plan?.[index]?.title;
+  if (planned) return planned;
+  const titles = {
+    cover: ctx.title,
+    agenda: "خريطة العرض",
+    why: "لماذا هذا مهم الآن؟",
+    problem: "المشكلة التي تستحق الحل",
+    solution: "من الفكرة إلى التنفيذ بثقة",
+    market: "فرصة واضحة لجمهور واسع",
+    product: "تجربة منتج مصممة للعمل",
+    "client-context": "سياق الجمهور والقرار",
+    "buyer-pain": "الألم الذي نحلّه",
+    "proposed-solution": "الحل المقترح",
+    benefits: "قيمة عملية قابلة للقياس",
+    metrics: "مؤشرات تجعل القرار أوضح",
+    pillars: "نظام متماسك لا مجرد شرائح",
+    "business-model": "نموذج القيمة والعائد",
+    traction: "إشارات تحقق مبكرة",
+    gtm: "مسار الوصول إلى السوق",
+    financials: "الأرقام التي تدعم القرار",
+    roadmap: "خطة طريق واضحة وقابلة للتنفيذ",
+    proof: "إثبات يقلل المخاطر",
+    scope: "نطاق العمل بوضوح",
+    implementation: "خطة تنفيذ تقلل المخاطر",
+    differentiators: "ما الذي يجعل هذا النهج أقوى؟",
+    "commercial-case": "الجدوى التجارية باختصار",
+    "learning-outcomes": "نتائج التعلم المتوقعة",
+    "learner-context": "سياق المتعلمين",
+    "core-concepts": "المفاهيم الأساسية",
+    "practice-loop": "حلقة التدريب والتطبيق",
+    "example-walkthrough": "مثال تطبيقي واضح",
+    checklist: "قائمة تنفيذ سريعة",
+    assessment: "قياس الإتقان",
+    "rollout-plan": "خطة الإطلاق والتبني",
+    "next-steps": "القرار التالي",
+    ask: "الطلب واضح",
+    closing: "رحلتك تبدأ بخطوة واحدة"
+  };
+  return titles[layout] || labelFromLayout(layout);
+}
+
+function arabicLead(ctx, layout) {
+  const topic = ctx.title;
+  const map = {
+    cover: ctx.subtitle,
+    problem: "الجمهور لا يحتاج مزيدًا من النصوص؛ يحتاج بنية تقود الانتباه من المشكلة إلى القرار.",
+    "buyer-pain": "سمِّ الاحتكاك بوضوح، ثم اربطه بتكلفة أو فرصة يستطيع الجمهور رؤيتها فورًا.",
+    "client-context": "ابدأ من واقع الجمهور: ما الذي يحاول إنجازه، وما الذي يمنعه، وما القرار المطلوب منه؟",
+    why: "القيمة تظهر عندما يتحول الموضوع إلى قصة واضحة، مرقمة، وقابلة للعرض أمام أصحاب القرار.",
+    solution: "نحوّل المدخلات الخام إلى هيكل عرض، تسلسل بصري، ونبرة عربية سليمة تصلح للعرض مباشرة.",
+    "proposed-solution": "قدّم التوصية كمسار عمل لا كقائمة مزايا، واجعل النتيجة النهائية سهلة التخيل.",
+    product: "التجربة تربط بين الفكرة، الجمهور، ونوع العرض ثم تنتج شرائح قابلة للتعديل والتصدير.",
+    market: "الجمهور العربي واسع، متنوع، ويحتاج أدوات ذكاء اصطناعي تفهم اتجاه النص وثقافة العرض.",
+    benefits: "كل شريحة يجب أن تخدم رسالة واحدة بوضوح، مع مساحة بيضاء كافية وإشارة بصرية دقيقة.",
+    pillars: "النظام الأفضل يجمع بين القصة، التصميم، الأدلة، والتصدير في مسار واحد.",
+    differentiators: "التميّز يظهر في التفاصيل: لغة سليمة، إيقاع بصري، وملفات قابلة للتعديل لا صور جامدة.",
+    proof: "الإثبات الجيد يختصر الاعتراضات ويجعل القرار أسهل على الجمهور.",
+    scope: "النطاق الواضح يحمي جودة التنفيذ ويمنع تشتت الرسالة بين تفاصيل غير ضرورية.",
+    implementation: "خطة التنفيذ الجيدة تشرح المراحل، المسؤوليات، والاعتماد المطلوب من كل طرف.",
+    roadmap: "التميز لا يأتي من القالب فقط؛ يأتي من خطوات إنتاج قابلة للتكرار والتحسين.",
+    metrics: "الأرقام تمنح العرض ثقلًا، خصوصًا عندما تظهر داخل بطاقات واضحة لا تزاحم العنوان.",
+    traction: "إشارات التحقق تمنح القصة مصداقية وتظهر أن الفرضية قابلة للنمو.",
+    financials: "القرار يصبح أسهل عندما تظهر العلاقة بين الاستثمار، العائد، والمخاطر بوضوح.",
+    "commercial-case": "اربط الاستثمار بالعائد، والجهد بالنتيجة، والقرار بخطوة عملية قريبة.",
+    closing: ctx.bank.closing
+  };
+  return map[layout] || `هذا القسم يحول ${topic} إلى رسالة عملية، أنيقة، ومفهومة بسرعة.`;
+}
+
+function arabicMetrics(ctx) {
+  const supplied = (ctx.evidence || []).slice(0, 3).map((item) => ({
+    metric: item.metric,
+    label: item.label || item.raw || "دليل داعم"
+  })).filter((item) => item.metric);
+  if (supplied.length) return supplied;
+  return [
+    { metric: "5h", label: "وقت يمكن اختصاره عند تحويل الفكرة إلى شرائح جاهزة" },
+    { metric: "400M+", label: "ناطق بالعربية يحتاجون تجربة عرض تفهم لغتهم" },
+    { metric: "73%", label: "فرصة لتحسين جودة المخرجات العربية واتجاه النص" }
+  ];
+}
+
+function arabicProcessSteps(ctx) {
+  const slidePrompt = /شرائح|عرض|عروض|ppt|powerpoint|presentation/i.test(ctx.prompt);
+  if (slidePrompt) {
+    return [
+      ["اكتب الفكرة", "أدخل موضوع العرض بجملة أو فقرة قصيرة، بالعربية أو الإنجليزية."],
+      ["اختر الفئة", "حدد الجمهور والنبرة حتى يأخذ التصميم سياقه الصحيح."],
+      ["توليد ذكي", "نبني الهيكل، النصوص، الرسوم، والتسلسل البصري تلقائيًا."],
+      ["حمّل وقدّم", "صدّر PPTX أو PDF قابلًا للتعديل، وابدأ العرض بثقة."]
+    ];
+  }
+  return (ctx.bank.pillars || []).slice(0, 4).map((item, index) => [
+    item,
+    ["حدد الهدف بوضوح قبل بناء الرسالة.", "حوّل الفكرة إلى قرار أو سلوك قابل للتنفيذ.", "استخدم الأدلة لإزالة الغموض.", "اختم بخطوة عملية سهلة."][index]
+  ]);
+}
+
+function arabicSegmentCards(ctx) {
+  const base = [...(ctx.bank.benefits || []), ...(ctx.bank.pillars || []), ...(ctx.bank.agenda || [])]
+    .filter(Boolean)
+    .slice(0, 4);
+  while (base.length < 4) base.push(["الجمهور", "القيمة", "الدليل", "القرار"][base.length]);
+  return base.map((title, index) => ({
+    title,
+    eyebrow: [`01 / AUDIENCE`, `02 / VALUE`, `03 / PROOF`, `04 / DECISION`][index],
+    detail: [
+      "حدد من سيستفيد من العرض وما الذي يحتاجه ليقتنع.",
+      "اربط الميزة بنتيجة عملية أو تجارية واضحة.",
+      "ادعم الرسالة بإشارة رقمية أو مثال قابل للتصديق.",
+      "اجعل الخطوة التالية بسيطة ومحددة زمنيًا."
+    ][index]
+  }));
+}
+
+function makeArabicLuxeSlide(layout, index, ctx) {
+  const t = ctx.theme;
+  const title = arabicSlideTitle(ctx, layout, index);
+  const file = `${String(index + 1).padStart(2, "0")}-${layout}.html`;
+  let elements = [];
+
+  if (layout === "cover") {
+    const heroSize = title.length <= 8 ? 166 : title.length <= 22 ? 112 : 80;
+    elements = [
+      el("shape", 0, 0, W, H, { fill: t.paper, stroke: t.paper }),
+      el("shape", 1320, 0, 600, 520, { fill: t.bg, stroke: t.bg }),
+      el("shape", 1290, 0, 4, 520, { fill: t.accent, stroke: t.accent }),
+      el("shape", 1780, 60, 56, 56, { fill: t.bg, stroke: t.accent }),
+      el("shape", 120, 132, 48, 2, { fill: t.accent, stroke: t.accent }),
+      arabicText(ctx, 190, 114, 620, 42, "منصة عربية · رؤية عالمية", 22, t.ink, { lineHeight: 1.05 }),
+      arabicText(ctx, 120, 270, 1180, 260, title, heroSize, t.ink, { bold: true, lineHeight: 1.02 }),
+      latinText(ctx, 124, 550, 850, 78, (ctx.brand?.name || "DECKFORGE").toUpperCase(), 58, t.ink, { bold: true, align: "left", lineHeight: 1 }),
+      el("shape", 120, 680, 120, 3, { fill: t.ink, stroke: t.ink }),
+      arabicText(ctx, 120, 720, 1380, 132, ctx.subtitle, 42, "#334155", { lineHeight: 1.45 }),
+      latinText(ctx, 1820, 75, 60, 34, String(index + 1).padStart(2, "0"), 26, t.white, { bold: true, align: "center" }),
+      latinText(ctx, 120, 940, 460, 26, "BUILT WITH DECKFORGE", 16, "#94A3B8", { bold: true, align: "left" }),
+      arabicText(ctx, 120, 978, 760, 34, [ctx.brand?.audience, arabicObjective(ctx)].filter(Boolean).join(" · ") || "عرض احترافي قابل للتعديل", 22, t.ink, { bold: true }),
+      latinText(ctx, 1560, 940, 280, 26, `EST. ${new Date().getFullYear()}`, 16, "#94A3B8", { bold: true, align: "right" }),
+      arabicText(ctx, 1500, 978, 340, 34, "عمّان · الأردن", 22, t.ink, { bold: true })
+    ];
+  } else if (["problem", "why", "buyer-pain", "client-context"].includes(layout)) {
+    const metrics = arabicMetrics(ctx);
+    elements = arabicChrome(ctx, index, layout);
+    elements.push(arabicText(ctx, 120, 218, 1180, 300, title, title.length > 44 ? 58 : 76, t.ink, { bold: true, lineHeight: 1.22 }));
+    elements.push(arabicText(ctx, 120, 610, 920, 116, arabicLead(ctx, layout), 26, t.muted, { lineHeight: 1.65 }));
+    metrics.slice(0, 3).forEach((item, i) => {
+      const y = 200 + i * 240;
+      const dark = i === 0;
+      elements.push(el("shape", 1360, y, 440, 210, { fill: dark ? t.bg : "#F8FAFC", stroke: dark ? t.bg : "#E2E8F0" }));
+      elements.push(el("shape", 1360, y, 6, 210, { fill: dark ? t.accent : t.bg, stroke: dark ? t.accent : t.bg }));
+      elements.push(latinText(ctx, 1400, y + 30, 380, 92, item.metric, metricSize(item.metric, 92), dark ? t.white : t.ink, { bold: true }));
+      elements.push(arabicText(ctx, 1400, y + 130, 380, 58, item.label, 21, dark ? "#CBD5E1" : t.muted, { lineHeight: 1.36 }));
+    });
+    elements.push(...arabicFooterBand(ctx, "رؤيتنا · OUR VISION", "نصنع الشريحة التي تستحق رسالتك.", true));
+  } else if (["solution", "product", "agenda", "proposed-solution"].includes(layout)) {
+    const steps = arabicProcessSteps(ctx);
+    elements = arabicChrome(ctx, index, layout);
+    elements.push(arabicText(ctx, 120, 196, 1660, 130, title, title.length > 48 ? 54 : 70, t.ink, { bold: true, lineHeight: 1.15 }));
+    elements.push(arabicText(ctx, 120, 360, 1380, 82, arabicLead(ctx, layout), 24, t.muted, { lineHeight: 1.58 }));
+    steps.slice(0, 4).forEach(([stepTitle, detail], i) => {
+      const x = 120 + i * 420;
+      const dark = i === 3;
+      elements.push(el("shape", x, 520, 400, 400, { fill: dark ? t.bg : "#F8FAFC", stroke: dark ? t.bg : "#E2E8F0" }));
+      elements.push(el("shape", x, 520, 400, 6, { fill: t.accent, stroke: t.accent }));
+      elements.push(latinText(ctx, x + 30, 558, 340, 78, String(i + 1).padStart(2, "0"), 70, dark ? t.accent : t.ink, { bold: true }));
+      elements.push(arabicText(ctx, x + 30, 662, 340, 58, stepTitle, 32, dark ? t.white : t.ink, { bold: true, lineHeight: 1.2 }));
+      elements.push(arabicText(ctx, x + 30, 750, 340, 116, detail, 19, dark ? "#CBD5E1" : t.muted, { lineHeight: 1.6 }));
+    });
+    elements.push(...arabicFooterBand(ctx, "دعم كامل", "للغة العربية واتجاه النص وعلامات الترقيم", false));
+  } else if (["market", "benefits", "pillars", "differentiators", "proof", "scope"].includes(layout)) {
+    const cards = arabicSegmentCards(ctx);
+    elements = arabicChrome(ctx, index, layout);
+    elements.push(arabicText(ctx, 120, 196, 1660, 120, title, title.length > 48 ? 54 : 70, t.ink, { bold: true, lineHeight: 1.15 }));
+    elements.push(arabicText(ctx, 120, 340, 1260, 76, arabicLead(ctx, layout), 24, t.muted, { lineHeight: 1.55 }));
+    cards.forEach((card, i) => {
+      const x = i % 2 === 0 ? 120 : 980;
+      const y = i < 2 ? 460 : 710;
+      const dark = i === 0;
+      elements.push(el("shape", x, y, i % 2 === 0 ? 840 : 820, 230, { fill: dark ? t.bg : "#F8FAFC", stroke: dark ? t.bg : "#E2E8F0" }));
+      elements.push(el("shape", x, y, 6, 230, { fill: dark ? t.accent : t.bg, stroke: dark ? t.accent : t.bg }));
+      elements.push(latinText(ctx, x + 34, y + 34, 360, 30, card.eyebrow, 22, dark ? t.accent : t.bg, { bold: true }));
+      elements.push(arabicText(ctx, x + 34, y + 82, 720, 52, card.title, 40, dark ? t.white : t.ink, { bold: true, lineHeight: 1.15 }));
+      elements.push(arabicText(ctx, x + 34, y + 150, 720, 58, card.detail, 18, dark ? "#CBD5E1" : t.muted, { lineHeight: 1.5 }));
+    });
+    elements.push(...arabicFooterBand(ctx, "حجم الفرصة · TAM", "كل جمهور يحتاج نسخة واضحة من الرسالة نفسها.", true));
+  } else if (["roadmap", "implementation", "gtm", "rollout-plan"].includes(layout)) {
+    const steps = ["البداية", "النموذج", "الإطلاق", "التحسين", "التوسع"];
+    elements = arabicChrome(ctx, index, layout);
+    elements.push(arabicText(ctx, 120, 196, 1660, 120, title, title.length > 48 ? 54 : 70, t.ink, { bold: true, lineHeight: 1.15 }));
+    elements.push(arabicText(ctx, 120, 340, 1260, 78, arabicLead(ctx, layout), 24, t.muted, { lineHeight: 1.55 }));
+    elements.push(el("shape", 210, 610, 1500, 6, { fill: t.accent, stroke: t.accent }));
+    steps.forEach((step, i) => {
+      const x = 190 + i * 360;
+      const dark = i === 2;
+      elements.push(el("shape", x, 548, 118, 118, { fill: dark ? t.bg : t.paper, stroke: t.accent, radius: 59 }));
+      elements.push(latinText(ctx, x + 22, 580, 74, 46, String(i + 1).padStart(2, "0"), 32, dark ? t.white : t.accent, { bold: true, align: "center" }));
+      elements.push(arabicText(ctx, x - 60, 700, 238, 48, step, 28, t.ink, { bold: true, align: "center" }));
+      elements.push(arabicText(ctx, x - 86, 756, 290, 58, ["تحديد الهدف", "تصميم التجربة", "إطلاق النسخة", "قياس الأداء", "توسيع الأثر"][i], 18, t.muted, { align: "center", lineHeight: 1.45 }));
+    });
+    elements.push(...arabicFooterBand(ctx, "خطة تشغيلية", "مسار واضح من الفكرة إلى الاعتماد.", false));
+  } else if (["metrics", "financials", "traction", "commercial-case", "assessment"].includes(layout)) {
+    const metrics = arabicMetrics(ctx);
+    elements = arabicChrome(ctx, index, layout);
+    elements.push(arabicText(ctx, 120, 196, 1220, 130, title, title.length > 48 ? 54 : 70, t.ink, { bold: true, lineHeight: 1.15 }));
+    elements.push(arabicText(ctx, 120, 360, 980, 86, arabicLead(ctx, layout), 24, t.muted, { lineHeight: 1.55 }));
+    elements.push(el("shape", 1240, 180, 500, 260, { fill: t.bg, stroke: t.bg }));
+    elements.push(latinText(ctx, 1300, 236, 380, 86, metrics[0]?.metric || "3x", metricSize(metrics[0]?.metric || "3x", 72), t.white, { bold: true, align: "center" }));
+    elements.push(arabicText(ctx, 1290, 336, 400, 52, metrics[0]?.label || "إشارة قرار واضحة", 21, "#CBD5E1", { align: "center", lineHeight: 1.35 }));
+    metrics.slice(0, 3).forEach((item, i) => {
+      const x = 120 + i * 560;
+      elements.push(el("shape", x, 540, 500, 260, { fill: i === 1 ? t.bg : "#F8FAFC", stroke: i === 1 ? t.bg : "#E2E8F0" }));
+      elements.push(el("shape", x, 540, 14, 260, { fill: t.accent, stroke: t.accent }));
+      elements.push(latinText(ctx, x + 44, 592, 390, 70, item.metric, metricSize(item.metric, 48), i === 1 ? t.white : t.ink, { bold: true }));
+      elements.push(arabicText(ctx, x + 44, 676, 390, 70, item.label, 22, i === 1 ? "#CBD5E1" : t.muted, { lineHeight: 1.35 }));
+    });
+    elements.push(...arabicFooterBand(ctx, "مؤشرات قابلة للنقاش", "الأرقام مهمة عندما تخدم القرار لا عندما تزاحم القصة.", false));
+  } else if (["closing", "ask", "next-steps"].includes(layout)) {
+    elements = [
+      el("shape", 0, 0, W, H, { fill: t.bg, stroke: t.bg }),
+      el("shape", 0, 0, 760, H, { fill: t.white, stroke: t.white }),
+      el("shape", 760, 0, 4, H, { fill: t.accent, stroke: t.accent }),
+      el("shape", 120, 154, 48, 2, { fill: t.accent, stroke: t.accent }),
+      arabicText(ctx, 190, 138, 480, 42, "FOUNDERS · المؤسسون", 18, t.ink, { lineHeight: 1.1 }),
+      arabicText(ctx, 80, 230, 600, 130, "الفريق الذي يبني التجربة", 58, t.ink, { bold: true, lineHeight: 1.15 }),
+      el("shape", 80, 430, 620, 2, { fill: "#E2E8F0", stroke: "#E2E8F0" }),
+      arabicText(ctx, 80, 480, 600, 48, ctx.brand?.name || "DeckForge", 44, t.ink, { bold: true }),
+      arabicText(ctx, 80, 548, 600, 78, arabicObjective(ctx) || "منصة عربية لصناعة عروض تقديمية احترافية", 22, t.muted, { lineHeight: 1.5 }),
+      arabicText(ctx, 830, 138, 600, 42, "شكرًا لكم · THANK YOU", 18, t.accent, { lineHeight: 1.1 }),
+      arabicText(ctx, 830, 250, 900, 150, title, title.length > 40 ? 58 : 76, t.white, { bold: true, lineHeight: 1.15 }),
+      arabicText(ctx, 830, 450, 820, 90, arabicLead(ctx, "closing"), 30, "#CBD5E1", { lineHeight: 1.35 }),
+      el("shape", 830, 760, 490, 130, { fill: t.bg, stroke: "rgba(201,169,97,0.4)" }),
+      arabicText(ctx, 870, 792, 410, 26, "للتواصل · CONTACT", 14, t.accent, { lineHeight: 1.05 }),
+      latinText(ctx, 870, 832, 410, 34, "hello@deckforge.ai", 22, t.white, { bold: true }),
+      el("shape", 1340, 760, 490, 130, { fill: t.accent, stroke: t.accent }),
+      arabicText(ctx, 1380, 792, 410, 26, "القرار التالي", 14, t.bg, { lineHeight: 1.05 }),
+      arabicText(ctx, 1380, 832, 410, 36, arabicObjective(ctx) || "ابدأ النسخة التجريبية", 22, t.bg, { bold: true })
+    ];
+  } else {
+    elements = arabicChrome(ctx, index, layout);
+    elements.push(arabicText(ctx, 120, 196, 1660, 120, title, title.length > 48 ? 54 : 70, t.ink, { bold: true, lineHeight: 1.15 }));
+    elements.push(arabicText(ctx, 120, 340, 1260, 78, arabicLead(ctx, layout), 24, t.muted, { lineHeight: 1.55 }));
+    ctx.bank.agenda.slice(0, 3).forEach((item, i) => {
+      const y = 490 + i * 130;
+      elements.push(el("shape", 210, y, 1350, 106, { fill: "#F8FAFC", stroke: "#E2E8F0" }));
+      elements.push(latinText(ctx, 250, y + 28, 90, 42, String(i + 1).padStart(2, "0"), 30, t.accent, { bold: true, align: "center" }));
+      elements.push(arabicText(ctx, 390, y + 24, 1060, 52, item, 30, t.ink, { bold: true }));
+    });
+    elements.push(...arabicFooterBand(ctx, "إيقاع بصري", "عنوان واضح، مساحة بيضاء، وتفاصيل قابلة للتعديل.", false));
+  }
+
+  return {
+    id: `slide-${index + 1}`,
+    filename: file,
+    layout,
+    title,
+    brief: ctx.plan[index]?.brief || "",
+    speakerNotes: ctx.plan[index]?.speakerNotes || "",
+    qaFocus: ctx.plan[index]?.qaFocus || "Premium RTL Arabic typography, hierarchy, contrast, and clean export",
+    elements
+  };
+}
+
+function makeSlide(layout, index, ctx) {
+  const t = ctx.theme;
+  const rtl = ctx.rtl;
+  const bank = ctx.bank;
+  const titleAlign = rtl ? "right" : "left";
+  const titleX = rtl ? 720 : 126;
+  const file = `${String(index + 1).padStart(2, "0")}-${layout}.html`;
+  let elements = background(t);
+  let title = "";
+
+  if (isArabicCinematic(ctx)) {
+    return makeArabicCinematicSlide(layout, index, ctx);
+  }
+
+  if (isArabicInvestor(ctx)) {
+    return makeArabicInvestorSlide(layout, index, ctx);
+  }
+
+  if (isArabicLuxe(ctx)) {
+    return makeArabicLuxeSlide(layout, index, ctx);
+  }
+
+  if (layout === "cover") {
+    title = ctx.title;
+    const heroSize = title.length > 42 ? 54 : title.length > 30 ? 62 : 70;
+    const coverSurface = darkSurface(t);
+    const coverTheme = { ...t, bg: coverSurface };
+    const coverLine = ctx.brand.configured
+      ? [ctx.brand.name, ctx.brand.audience, ctx.brand.objective].filter(Boolean).join(" / ")
+      : (rtl ? "\u0631\u0624\u064a\u0629 \u0634\u0627\u0645\u0644\u0629 / \u062e\u0637\u0648\u0627\u062a \u0639\u0645\u0644\u064a\u0629 / 10 \u0633\u0644\u0627\u064a\u062f\u0627\u062a" : `Strategic story / Practical steps / ${ctx.count} slides`);
+    elements = [
+      el("shape", 0, 0, W, H, { fill: coverSurface, stroke: coverSurface }),
+      ...imageBlock(0, 0, 720, H, coverTheme, rtl ? "\u0635\u0648\u0631\u0629 \u0645\u0648\u0636\u0648\u0639\u064a\u0629" : "Thematic visual"),
+      el("shape", 720, 0, 1200, H, { fill: coverSurface, stroke: coverSurface }),
+      el("shape", 900, 300, 18, 96, { fill: t.accent, stroke: t.accent }),
+      el("shape", 1040, 690, 210, 6, { fill: t.accent, stroke: t.accent }),
+      text(t, rtl ? 760 : 880, 350, 880, 230, title, heroSize, t.white, { bold: true, align: rtl ? "right" : "left", rtl, lineHeight: 1.04 }),
+      text(t, rtl ? 760 : 880, 612, 760, 92, ctx.subtitle, 30, "#dbe4f0", { align: rtl ? "right" : "left", rtl, lineHeight: 1.22 }),
+      text(t, rtl ? 760 : 880, 842, 760, 42, rtl ? "\u0631\u0624\u064a\u0629 \u0634\u0627\u0645\u0644\u0629 \u2022 \u062e\u0637\u0648\u0627\u062a \u0639\u0645\u0644\u064a\u0629 \u2022 10 \u0633\u0644\u0627\u064a\u062f\u0627\u062a" : "Strategic story • Practical steps • 10 slides", 22, "#c9d4e4", { align: rtl ? "right" : "left", rtl })
+    ];
+    elements[elements.length - 1].text = coverLine;
+  } else if (layout === "agenda") {
+    title = rtl ? "\u0645\u0627\u0630\u0627 \u0633\u062a\u062c\u062f \u0641\u064a \u0647\u0630\u0627 \u0627\u0644\u0639\u0631\u0636\u061f" : "What you will find in this deck";
+    const sideSurface = darkSurface(t);
+    elements.push(el("shape", 1460, 108, 460, 892, { fill: sideSurface, stroke: sideSurface }));
+    elements.push(text(t, titleX, 250, 820, 140, title, 56, t.ink, { bold: true, align: titleAlign, rtl, lineHeight: 1.06 }));
+    bank.agenda.slice(0, 5).forEach((item, i) => {
+      const rowY = 500 + i * 86;
+      elements.push(text(t, rtl ? 980 : 220, rowY, 420, 46, item, 28, t.ink, { bold: true, align: titleAlign, rtl }));
+      elements.push(text(t, rtl ? 880 : 126, rowY, 70, 46, String(i + 1).padStart(2, "0"), 26, t.accent, { bold: true, align: "center" }));
+    });
+    elements.push(text(t, 1540, 430, 260, 160, String(ctx.count), 118, t.accent, { bold: true, align: "center" }));
+    elements.push(text(t, 1510, 600, 320, 70, rtl ? "\u0645\u062d\u0627\u0648\u0631 \u0631\u0626\u064a\u0633\u064a\u0629" : "core sections", 28, t.white, { bold: true, align: "center", rtl }));
+  } else if (layout === "why") {
+    title = rtl ? "\u0644\u0645\u0627\u0630\u0627 \u0647\u0630\u0627 \u0645\u0647\u0645 \u0627\u0644\u0622\u0646\u061f" : "Why this matters now";
+    elements.push(...imageBlock(0, 108, 760, 892, t, rtl ? "\u0633\u064a\u0627\u0642 \u0648\u0627\u0633\u0639" : "Context"));
+    elements.push(text(t, 900, 260, 760, 132, title, 58, t.ink, { bold: true, align: titleAlign, rtl }));
+    elements.push(text(t, 900, 438, 720, 116, ctx.why, 30, t.muted, { align: titleAlign, rtl, lineHeight: 1.28 }));
+    [0, 1, 2].forEach((i) => {
+      elements.push(el("shape", 900, 620 + i * 104, 620, 72, { fill: "#ffffff", stroke: "#e4e7ec", radius: 26 }));
+      elements.push(text(t, 930, 640 + i * 104, 560, 38, bank.benefits[i] || bank.agenda[i], 24, t.ink, { bold: true, align: titleAlign, rtl }));
+    });
+  } else if (layout === "benefits") {
+    title = rtl ? "\u0627\u0644\u0641\u0648\u0627\u0626\u062f \u0627\u0644\u0623\u0643\u062b\u0631 \u062a\u0623\u062b\u064a\u0631\u0627" : "The highest-impact benefits";
+    elements.push(text(t, titleX, 204, 980, 108, title, 54, t.ink, { bold: true, align: titleAlign, rtl }));
+    bank.benefits.forEach((item, i) => {
+      const x = 126 + i * 560;
+      elements.push(el("shape", x, 430, 490, 320, { fill: "#ffffff", stroke: "#e4e7ec", radius: 34 }));
+      elements.push(el("shape", x, 430, 16, 320, { fill: i === 1 ? t.accent2 : t.accent, stroke: i === 1 ? t.accent2 : t.accent }));
+      elements.push(text(t, x + 46, 480, 390, 76, `0${i + 1}`, 36, t.accent, { bold: true, align: rtl ? "right" : "left" }));
+      elements.push(text(t, x + 46, 570, 380, 90, item, 30, t.ink, { bold: true, align: titleAlign, rtl, lineHeight: 1.18 }));
+    });
+  } else if (layout === "metrics") {
+    title = rtl ? "\u0645\u0624\u0634\u0631\u0627\u062a \u062a\u062c\u0639\u0644 \u0627\u0644\u0642\u064a\u0645\u0629 \u0648\u0627\u0636\u062d\u0629" : "Signals that make the value clear";
+    elements.push(text(t, titleX, 200, 1020, 120, title, 52, t.ink, { bold: true, align: titleAlign, rtl }));
+    const chart = ctx.charts?.[0];
+    if (chart) {
+      elements.push(...chartElements(t, chart, 180, 410, 1560, 400));
+    } else {
+      const metricSurface = darkSurface(t);
+      const metrics = rtl ? [["75%", "\u0645\u0646 \u0627\u0644\u0645\u062d\u062a\u0648\u0649 \u0627\u0644\u0639\u0627\u0644\u0645\u064a"], ["60%", "\u0641\u0631\u0635 \u0623\u0648\u0633\u0639"], ["90", "\u064a\u0648\u0645\u0627 \u0644\u0628\u0646\u0627\u0621 \u0639\u0627\u062f\u0629"]] : [["75%", "of global knowledge sources"], ["60%", "broader opportunity surface"], ["90", "days to build a habit"]];
+      metrics.forEach((m, i) => {
+        const x = 180 + i * 555;
+        elements.push(el("shape", x, 440, 450, 260, { fill: i === 1 ? metricSurface : "#ffffff", stroke: "#e4e7ec", radius: 30 }));
+        elements.push(text(t, x + 50, 490, 350, 96, m[0], metricSize(m[0], 76), i === 1 ? t.white : t.accent, { bold: true, align: "center" }));
+        elements.push(text(t, x + 54, 604, 342, 70, m[1], 24, i === 1 ? "#dbe4f0" : t.muted, { align: "center", rtl }));
+      });
+    }
+  } else if (layout === "pillars") {
+    title = rtl ? "\u0646\u0638\u0627\u0645 \u064a\u062d\u0648\u0644 \u0627\u0644\u0641\u0643\u0631\u0629 \u0625\u0644\u0649 \u062a\u0642\u062f\u0645" : "A system that turns effort into progress";
+    elements.push(text(t, titleX, 184, 980, 118, title, 50, t.ink, { bold: true, align: titleAlign, rtl }));
+    bank.pillars.forEach((item, i) => {
+      const x = 150 + i * 430;
+      elements.push(el("shape", x, 430, 360, 300, { fill: "#ffffff", stroke: "#d8dee8", radius: 28 }));
+      elements.push(text(t, x + 34, 478, 290, 42, `0${i + 1}`, 28, t.accent, { bold: true, align: "center" }));
+      elements.push(text(t, x + 36, 552, 288, 70, item, 30, t.ink, { bold: true, align: "center", rtl }));
+      elements.push(text(t, x + 44, 650, 270, 58, rtl ? "\u062e\u0637\u0648\u0629 \u0642\u0627\u0628\u0644\u0629 \u0644\u0644\u062a\u0643\u0631\u0627\u0631 \u0648\u0627\u0644\u0642\u064a\u0627\u0633" : "Repeatable practice with visible feedback", 19, t.muted, { align: "center", rtl }));
+    });
+  } else if (layout === "roadmap") {
+    title = rtl ? "\u062e\u0637\u0629 \u0637\u0631\u064a\u0642 \u0628\u0633\u064a\u0637\u0629" : "A simple roadmap";
+    elements.push(text(t, titleX, 190, 900, 100, title, 54, t.ink, { bold: true, align: titleAlign, rtl }));
+    elements.push(el("shape", 230, 610, 1460, 8, { fill: t.accent, stroke: t.accent }));
+    const stepSurface = darkSurface(t);
+    const steps = rtl ? ["\u0627\u0644\u0628\u062f\u0627\u064a\u0629", "\u0627\u0644\u062a\u0643\u0631\u0627\u0631", "\u0627\u0644\u0642\u064a\u0627\u0633", "\u0627\u0644\u062a\u062d\u0633\u064a\u0646", "\u0627\u0644\u0625\u062a\u0642\u0627\u0646"] : ["Start", "Repeat", "Measure", "Improve", "Master"];
+    steps.forEach((step, i) => {
+      const x = 210 + i * 350;
+      elements.push(el("shape", x, 568, 94, 94, { fill: i === 2 ? stepSurface : "#ffffff", stroke: t.accent, radius: 47 }));
+      elements.push(text(t, x + 18, 590, 58, 42, `${i + 1}`, 30, i === 2 ? t.white : t.accent, { bold: true, align: "center" }));
+      elements.push(text(t, x - 70, 690, 230, 44, step, 26, t.ink, { bold: true, align: "center", rtl }));
+    });
+  } else if (isPlaybookLayout(layout) && layout !== "cover" && layout !== "closing") {
+    const spec = playbookSpec(layout, ctx);
+    const isTraining = trainingLayouts.includes(layout);
+    const signalSurface = darkSurface(t);
+    title = spec.title;
+    elements.push(text(t, 126, 176, 940, 100, title, 52, t.ink, { bold: true, align: "left", lineHeight: 1.06 }));
+    elements.push(text(t, 126, 304, 900, 92, spec.lead, 26, t.muted, { align: "left", lineHeight: 1.24 }));
+    elements.push(el("shape", 1200, 170, 500, 260, { fill: signalSurface, stroke: signalSurface, radius: 26 }));
+    elements.push(text(t, 1260, 230, 380, 84, spec.metric, metricSize(spec.metric, 64), t.white, { bold: true, align: "center" }));
+    elements.push(text(t, 1260, 330, 380, 40, isTraining ? "learning signal" : "decision signal", 22, "#dbe4f0", { align: "center" }));
+    const chart = ctx.charts?.[0];
+    const chartReadyLayout = ["proof", "commercial-case", "assessment"].includes(layout);
+    if (chart && chartReadyLayout) {
+      elements.push(...chartElements(t, chart, 126, 500, 1040, 330, { compact: true }));
+      spec.cards.slice(0, 2).forEach((item, i) => {
+        const y = 520 + i * 150;
+        elements.push(el("shape", 1210, y, 490, 118, { fill: "#ffffff", stroke: "#e4e7ec", radius: 24 }));
+        elements.push(text(t, 1250, y + 26, 86, 34, `0${i + 1}`, 24, t.accent, { bold: true, align: "left" }));
+        elements.push(text(t, 1340, y + 24, 300, 58, item, 24, t.ink, { bold: true, align: "left", lineHeight: 1.12 }));
+      });
+    } else {
+      spec.cards.slice(0, 3).forEach((item, i) => {
+        const x = 126 + i * 560;
+        elements.push(el("shape", x, 520, 490, 240, { fill: "#ffffff", stroke: "#e4e7ec", radius: 26 }));
+        elements.push(text(t, x + 44, 568, 86, 44, `0${i + 1}`, 28, t.accent, { bold: true, align: "left" }));
+        elements.push(text(t, x + 44, 636, 380, 72, item, 30, t.ink, { bold: true, align: "left", lineHeight: 1.12 }));
+      });
+      const lane = isTraining ? ["Learn", "Practice", "Apply"] : ["Diagnose", "Propose", "Close"];
+      lane.forEach((step, i) => {
+        const x = 360 + i * 420;
+        elements.push(el("shape", x, 830, 300, 62, { fill: i === 1 ? t.accent : "#ffffff", stroke: t.accent, radius: 31 }));
+        elements.push(text(t, x + 24, 846, 252, 30, step, 22, i === 1 ? t.white : t.accent, { bold: true, align: "center" }));
+      });
+    }
+  } else if (investorLayouts.includes(layout) && layout !== "cover") {
+    const spec = investorSpec(layout, ctx);
+    const signalSurface = darkSurface(t);
+    title = spec.title;
+    elements.push(text(t, 126, 188, 980, 100, title, 52, t.ink, { bold: true, align: "left", lineHeight: 1.06 }));
+    elements.push(text(t, 126, 318, 850, 86, spec.lead, 27, t.muted, { align: "left", lineHeight: 1.24 }));
+    elements.push(el("shape", 1260, 184, 420, 250, { fill: signalSurface, stroke: signalSurface, radius: 28 }));
+    elements.push(text(t, 1310, 238, 320, 94, spec.metric, metricSize(spec.metric, 68), t.white, { bold: true, align: "center" }));
+    elements.push(text(t, 1310, 340, 320, 42, layout === "ask" ? "runway plan" : "investor signal", 23, "#dbe4f0", { align: "center" }));
+    spec.cards.forEach((item, i) => {
+      const x = 126 + i * 560;
+      elements.push(el("shape", x, 540, 490, 260, { fill: "#ffffff", stroke: "#e4e7ec", radius: 26 }));
+      elements.push(el("shape", x, 540, 14, 260, { fill: i === 1 ? t.accent2 : t.accent, stroke: i === 1 ? t.accent2 : t.accent }));
+      elements.push(text(t, x + 44, 592, 390, 46, `0${i + 1}`, 28, t.accent, { bold: true, align: "left" }));
+      elements.push(text(t, x + 44, 662, 380, 66, item, 31, t.ink, { bold: true, align: "left", lineHeight: 1.12 }));
+    });
+    if (["market", "financials", "traction"].includes(layout)) {
+      [0.45, 0.66, 0.82].forEach((height, i) => {
+        const x = 1300 + i * 95;
+        elements.push(el("shape", x, 500 - height * 110, 54, height * 110, { fill: i === 2 ? t.accent2 : t.accent, stroke: i === 2 ? t.accent2 : t.accent, radius: 8 }));
+        elements.push(text(t, x - 16, 516, 86, 28, ["Now", "Next", "Scale"][i], 16, t.muted, { align: "center" }));
+      });
+    }
+  } else if (layout === "closing") {
+    title = rtl ? "\u0631\u062d\u0644\u062a\u0643 \u062a\u0628\u062f\u0623 \u0628\u062e\u0637\u0648\u0629 \u0648\u0627\u062d\u062f\u0629" : "Your next step starts here";
+    const closeSurface = darkSurface(t);
+    elements = [
+      el("shape", 0, 0, W, H, { fill: closeSurface, stroke: closeSurface }),
+      el("shape", 150, 120, 150, 150, { fill: t.accent2, stroke: t.accent2, radius: 75 }),
+      el("shape", 1560, 760, 210, 210, { fill: t.accent, stroke: t.accent, radius: 105 }),
+      text(t, 430, 340, 1060, 180, title, 72, t.white, { bold: true, align: "center", rtl, lineHeight: 1.05 }),
+      text(t, 520, 590, 880, 92, bank.closing, 30, "#dbe4f0", { align: "center", rtl, lineHeight: 1.26 }),
+      el("shape", 540, 790, 260, 86, { fill: "#ffffff", stroke: "#ffffff", radius: 18 }),
+      text(t, 564, 812, 212, 36, rtl ? "\u0627\u0644\u062e\u0637\u0648\u0629 \u0627\u0644\u0623\u0648\u0644\u0649" : "First action", 22, t.ink, { bold: true, align: "center", rtl }),
+      el("shape", 830, 790, 260, 86, { fill: t.accent, stroke: t.accent, radius: 18 }),
+      text(t, 854, 812, 212, 36, rtl ? "\u062e\u0637\u0629 30 \u064a\u0648\u0645\u0627" : "30-day plan", 22, t.bg, { bold: true, align: "center", rtl }),
+      el("shape", 1120, 790, 260, 86, { fill: t.accent2, stroke: t.accent2, radius: 18 }),
+      text(t, 1144, 812, 212, 36, rtl ? "\u0642\u064a\u0627\u0633 \u0627\u0644\u062a\u0642\u062f\u0645" : "Measure progress", 22, t.bg, { bold: true, align: "center", rtl })
+    ];
+  } else {
+    const defaultTitles = {
+      habits: rtl ? "\u0639\u0627\u062f\u0627\u062a \u064a\u0648\u0645\u064a\u0629 \u0635\u063a\u064a\u0631\u0629" : "Small daily habits",
+      mistakes: rtl ? "\u0623\u062e\u0637\u0627\u0621 \u062a\u0624\u062e\u0631 \u0627\u0644\u062a\u0642\u062f\u0645" : "Mistakes that slow progress",
+      case: rtl ? "\u0646\u0645\u0648\u0630\u062c \u062a\u0637\u0628\u064a\u0642\u064a" : "Applied example",
+      "operating-model": rtl ? "\u0646\u0645\u0648\u0630\u062c \u0627\u0644\u062a\u0634\u063a\u064a\u0644" : "Operating model",
+      investment: rtl ? "\u0623\u064a\u0646 \u0646\u0633\u062a\u062b\u0645\u0631 \u0627\u0644\u062c\u0647\u062f\u061f" : "Where to invest effort",
+      appendix: rtl ? "\u0645\u0644\u062d\u0642 \u062a\u0646\u0641\u064a\u0630\u064a" : "Execution appendix"
+    };
+    title = defaultTitles[layout] || (rtl ? "\u0633\u0644\u0627\u064a\u062f \u062a\u0646\u0641\u064a\u0630\u064a" : "Execution slide");
+    elements.push(text(t, titleX, 190, 980, 100, title, 52, t.ink, { bold: true, align: titleAlign, rtl }));
+    const items = layout === "mistakes"
+      ? (rtl ? ["\u0627\u0644\u062a\u0639\u0644\u0645 \u0628\u0644\u0627 \u0647\u062f\u0641", "\u062a\u062c\u0627\u0647\u0644 \u0627\u0644\u0645\u0645\u0627\u0631\u0633\u0629", "\u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631 \u0644\u0644\u0643\u0645\u0627\u0644"] : ["Learning without a goal", "Skipping active practice", "Waiting for perfection"])
+      : bank.agenda.slice(0, 3);
+    items.forEach((item, i) => {
+      const y = 400 + i * 150;
+      elements.push(el("shape", 210, y, 1350, 106, { fill: "#ffffff", stroke: "#e4e7ec", radius: 24 }));
+      elements.push(text(t, 250, y + 26, 90, 42, `0${i + 1}`, 30, t.accent, { bold: true, align: "center" }));
+      elements.push(text(t, 390, y + 24, 1060, 48, item, 30, t.ink, { bold: true, align: titleAlign, rtl }));
+    });
+  }
+
+  if (layout !== "cover") {
+    elements.push(...evidenceFooter(ctx, layout), ...brandFooter(ctx, layout));
+  }
+
+  return {
+    id: `slide-${index + 1}`,
+    filename: file,
+    layout,
+    title,
+    brief: ctx.plan[index]?.brief || "",
+    speakerNotes: ctx.plan[index]?.speakerNotes || "",
+    qaFocus: ctx.plan[index]?.qaFocus || "",
+    elements
+  };
+}
+
+function labelFromLayout(layout) {
+  return String(layout || "slide")
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function roleForLayout(layout) {
+  if (layout === "cover") return "opening";
+  if (["closing", "next-steps", "ask"].includes(layout)) return "close";
+  return "body";
+}
+
+function normalizeOutlineItems(items, fallbackPlan = [], fallbackLayouts = []) {
+  return (items || []).map((item, index) => {
+    const fallback = fallbackPlan[index] || {};
+    const layout = item.layout || fallback.layout || fallbackLayouts[index] || layouts[Math.min(index, layouts.length - 1)] || "agenda";
+    return {
+      slide: index + 1,
+      layout,
+      role: item.role || fallback.role || roleForLayout(layout),
+      title: String(item.title || fallback.title || fallback.brief || labelFromLayout(layout)).trim(),
+      brief: String(item.brief || fallback.brief || "").trim(),
+      speakerNotes: String(item.speakerNotes || fallback.speakerNotes || "").trim(),
+      qaFocus: String(item.qaFocus || fallback.qaFocus || "Hierarchy, overflow, contrast, and alignment").trim()
+    };
+  });
+}
+
+function buildOutlineFromPlan(plan, slides) {
+  return normalizeOutlineItems((plan || []).map((item, index) => ({
+    ...item,
+    title: slides[index]?.title || item.title || item.brief || labelFromLayout(item.layout)
+  })), plan, (plan || []).map((item) => item.layout));
+}
+
+function applyOutlineToSlides(slides, outlineItems) {
+  normalizeOutlineItems(outlineItems).forEach((item, index) => {
+    const slide = slides[index];
+    if (!slide) return;
+    const title = titleElement(slide);
+    slide.layout = item.layout || slide.layout;
+    slide.title = item.title || slide.title;
+    slide.brief = item.brief || slide.brief;
+    slide.speakerNotes = item.speakerNotes || slide.speakerNotes;
+    slide.qaFocus = item.qaFocus || slide.qaFocus;
+    if (title && item.title) title.text = item.title;
+  });
+}
+
+function createGenerationContext(outlineItems = null) {
+  const prompt = $("prompt").value.trim();
+  const lang = $("language").value;
+  const rtl = lang === "ar" || (lang === "auto" && hasArabic(prompt));
+  const providedOutline = Array.isArray(outlineItems) && outlineItems.length ? outlineItems : null;
+  const requestedCount = Math.max(4, Math.min(14, Number($("slideCount").value) || 10));
+  const count = providedOutline ? Math.max(4, Math.min(14, providedOutline.length)) : requestedCount;
+  const template = selectedTemplate();
+  const activeReference = referenceAnalysis ? cloneDeck(referenceAnalysis) : null;
+  const themeKey = $("theme").value;
+  const promptArchetype = inferArchetype(prompt);
+  const referenceRecipe = activeReference?.visualRecipe || {};
+  const referenceTags = new Set((referenceRecipe.tags || []).map((tag) => String(tag || "").toLowerCase()));
+  const referenceFonts = (referenceRecipe.topFonts || []).map((item) => String(item.font || "").toLowerCase()).join(" ");
+  const referenceMediaCount = Number(activeReference?.assets?.mediaCount || activeReference?.structure?.mediaFiles || 0);
+  const referenceSuggestsCinematic = rtl && !template
+    && referenceRecipe.rtlSlideRatio >= 0.5
+    && referenceMediaCount >= 3
+    && (referenceFonts.includes("playfair") || referenceFonts.includes("cormorant") || referenceFonts.includes("amiri") || referenceTags.has("large-title"));
+  const referenceSuggestsInvestorDark = rtl && !template
+    && !referenceSuggestsCinematic
+    && referenceRecipe.rtlSlideRatio >= 0.5
+    && (referenceTags.has("dark-panels") || referenceTags.has("editorial-chrome"));
+  const autoArabicTheme = rtl && !template && themeKey === "executive";
+  const resolvedThemeKey = autoArabicTheme
+    ? (promptArchetype === "success-story" || referenceSuggestsCinematic
+      ? "arabicCinematic"
+      : (promptArchetype === "investor-pitch" || referenceSuggestsInvestorDark ? "arabicInvestor" : "arabicLuxe"))
+    : (referenceSuggestsCinematic && !["arabicLuxe", "arabicInvestor"].includes(themeKey)
+      ? "arabicCinematic"
+      : (referenceSuggestsInvestorDark && themeKey !== "arabicLuxe" ? "arabicInvestor" : themeKey));
+  const baseTheme = template?.theme ? cloneDeck(template.theme) : themes[resolvedThemeKey] || themes.executive;
+  const referenceBaseTheme = activeReference && !template ? synthesizeReferenceTheme(baseTheme, activeReference) : baseTheme;
+  const formBrand = readBrandBrief(prompt);
+  const templateBrand = template?.brand || {};
+  const defaultAccent = "#9a6a16";
+  const brand = template ? {
+    name: formBrand.name || templateBrand.name || "",
+    audience: formBrand.audience || templateBrand.audience || "",
+    objective: ($("deckGoal")?.value || "") === "Executive decision" ? (templateBrand.objective || formBrand.objective) : formBrand.objective,
+    tone: ($("tone")?.value || "") === "Board-ready" ? (templateBrand.tone || formBrand.tone) : formBrand.tone,
+    accent: ($("brandAccent")?.value || "").toLowerCase() === defaultAccent ? (templateBrand.accent || formBrand.accent) : formBrand.accent,
+    configured: true
+  } : formBrand;
+  const sourcePackage = parseSourceInput($("sourceInput")?.value || "");
+  const documentPackage = parseDocumentInput($("documentInput")?.value || "");
+  const evidence = [
+    ...parseEvidenceInput($("evidenceInput")?.value || ""),
+    ...sourcePackage.evidence,
+    ...documentPackage.evidence
+  ].slice(0, 16);
+  const sources = [
+    ...sourcePackage.sources,
+    ...documentPackage.sources
+  ];
+  const sourceMap = buildSourceMap(sources, evidence);
+  const charts = buildCharts(evidence);
+  const references = buildReferences(sources, documentPackage.documents, evidence);
+  const theme = applyBrandToTheme(referenceBaseTheme, brand);
+  let title = titleFromPrompt(prompt, rtl);
+  const keywords = extractKeywords(prompt);
+  const bank = topicBank(prompt, rtl);
+  const archetype = promptArchetype;
+  const strategy = buildStrategy(prompt, title, rtl, count, theme.name, keywords, archetype, brand, evidence, sources, documentPackage.documents, charts, references);
+  if (activeReference) {
+    strategy.referenceDeck = activeReference.fileName || "";
+    strategy.referenceFingerprint = activeReference.fingerprint || "";
+    strategy.visualDirection = `${strategy.visualDirection}; reference deck DNA: ${activeReference.fingerprint || activeReference.summary || "analyzed reference"}`;
+  }
+  const fallbackLayouts = selectLayouts(prompt, count, { rtl, theme });
+  const slideLayouts = providedOutline
+    ? providedOutline.slice(0, count).map((item, index) => item.layout || fallbackLayouts[index] || "agenda")
+    : fallbackLayouts;
+  const ctx = {
+    prompt,
+    rtl,
+    count,
+    theme,
+    brand,
+    evidence,
+    sources,
+    documents: documentPackage.documents,
+    charts,
+    references,
+    sourceMap,
+    title,
+    keywords,
+    archetype,
+    strategy,
+    bank,
+    subtitle: rtl ? "\u062f\u0644\u064a\u0644 \u0639\u0645\u0644\u064a \u0645\u0646\u0638\u0645 \u0648\u0642\u0627\u0628\u0644 \u0644\u0644\u062a\u0637\u0628\u064a\u0642" : "A polished, practical guide built for decision-ready presentation",
+    why: rtl ? "\u0627\u0644\u0642\u064a\u0645\u0629 \u062a\u0632\u062f\u0627\u062f \u0639\u0646\u062f\u0645\u0627 \u0646\u062d\u0648\u0644 \u0627\u0644\u0645\u0648\u0636\u0648\u0639 \u0625\u0644\u0649 \u062e\u0637\u0629 \u0648\u0627\u0636\u062d\u0629 \u062a\u0631\u0628\u0637 \u0628\u064a\u0646 \u0627\u0644\u062f\u0627\u0641\u0639\u060c \u0627\u0644\u0637\u0631\u064a\u0642\u0629\u060c \u0648\u0627\u0644\u0646\u062a\u064a\u062c\u0629." : "The value becomes visible when the idea is translated into a clear plan that connects motivation, method, and measurable outcomes."
+  };
+  const basePlan = slideLayouts.slice(0, count).map((layout, i) => planForLayout(layout, i, ctx));
+  const normalizedOutline = providedOutline ? normalizeOutlineItems(providedOutline.slice(0, count), basePlan, slideLayouts) : [];
+  if (normalizedOutline[0]?.title) {
+    title = normalizedOutline[0].title;
+    ctx.title = title;
+  }
+  ctx.plan = normalizedOutline.length
+    ? normalizedOutline.map((item, index) => ({
+      ...basePlan[index],
+      slide: index + 1,
+      layout: item.layout,
+      role: item.role || roleForLayout(item.layout),
+      brief: item.brief || basePlan[index]?.brief || "",
+      speakerNotes: item.speakerNotes || basePlan[index]?.speakerNotes || "",
+      qaFocus: item.qaFocus || basePlan[index]?.qaFocus || ""
+    }))
+    : basePlan;
+  return { prompt, rtl, count, theme, brand, evidence, sources, documents: documentPackage.documents, charts, references, sourceMap, referenceAnalysis: activeReference, title, keywords, archetype, strategy, ctx, slideLayouts, normalizedOutline, template };
+}
+
+function draftOutline() {
+  const { ctx, slideLayouts, count } = createGenerationContext();
+  const slides = slideLayouts.slice(0, count).map((layout, i) => makeSlide(layout, i, ctx));
+  outlineDraft = buildOutlineFromPlan(ctx.plan, slides);
+  outlineApprovedAt = "";
+  activeTab = "outline";
+  render();
+}
+
+function buildDeckFromOutline() {
+  if (!outlineDraft.length) draftOutline();
+  if (!outlineDraft.length) return;
+  outlineApprovedAt = new Date().toISOString();
+  generateDeck(outlineDraft);
+  activeTab = "preview";
+  render();
+}
+
+function generateDeck(outlineItems = null) {
+  const { prompt, rtl, count, theme, brand, evidence, sources, documents, charts, references, sourceMap, referenceAnalysis: activeReference, title, keywords, archetype, strategy, ctx, slideLayouts, normalizedOutline, template } = createGenerationContext(outlineItems);
+  const slides = slideLayouts.slice(0, count).map((layout, i) => makeSlide(layout, i, ctx));
+  if (normalizedOutline.length) applyOutlineToSlides(slides, normalizedOutline);
+  const outline = normalizedOutline.length ? normalizeOutlineItems(normalizedOutline, ctx.plan, slideLayouts) : buildOutlineFromPlan(ctx.plan, slides);
+  deck = {
+    schemaVersion: "1.0",
+    format: "html",
+    metadata: {
+      title: outline[0]?.title || title,
+      description: prompt,
+      author: "DeckForge",
+      archetype,
+      brandName: brand.name,
+      audience: strategy.audience,
+      objective: brand.objective,
+      tone: brand.tone,
+      evidenceCount: evidence.length,
+      sourceCount: sources.length,
+      documentCount: documents.length,
+      chartCount: charts.length,
+      referenceCount: references.length,
+      sourceClaimCount: sourceMap.sourceClaimCount,
+      referenceDeck: activeReference?.fileName || "",
+      referenceFingerprint: activeReference?.fingerprint || "",
+      referenceThemeName: activeReference ? theme.name : "",
+      slug: slugify(outline[0]?.title || title),
+      createdAt: new Date().toISOString(),
+      templateId: template?.id || "",
+      templateName: template?.name || "",
+      outlineStatus: normalizedOutline.length ? "approved" : "auto-drafted",
+      outlineApprovedAt: normalizedOutline.length ? (outlineApprovedAt || new Date().toISOString()) : ""
+    },
+    canvas: { width: W, height: H },
+    theme,
+    brand,
+    evidence,
+    sources,
+    documents,
+    charts,
+    references,
+    referenceAnalysis: activeReference,
+    sourceMap,
+    template: template ? cloneDeck(template) : null,
+    keywords,
+    archetype,
+    strategy,
+    agentLog: buildAgentLog(strategy, slides.length),
+    plan: ctx.plan,
+    outline,
+    playlist: slides.map((slide) => slide.filename),
+    variants: [],
+    slides
+  };
+  deck.deckDNA = buildDeckDNA(deck);
+  deck.metadata.styleFingerprint = deck.deckDNA?.fingerprint || "";
+  deck.briefing = buildBriefing(deck);
+  deck.metadata.briefingSlideCount = deck.briefing?.perSlide?.length || 0;
+  window.DeckForgeDeck = deck;
+  outlineDraft = cloneDeck(outline);
+  selected = 0;
+  selectedObject = null;
+  syncStoryboardState();
+  repairDeckQA(3);
+  updateFactCheck();
+  updateReview();
+  refreshSavePointSelect();
+  render();
+}
+
+function cssFontName(name) {
+  const clean = String(name || "").replace(/["']/g, "").trim();
+  if (!clean) return "";
+  return /\s/.test(clean) ? `"${clean}"` : clean;
+}
+
+function fontStackForElement(element) {
+  const primary = cssFontName(element.font || (element.rtl ? "Tajawal" : "Aptos"));
+  return element.rtl
+    ? `${primary}, Dubai, "Noto Kufi Arabic", "Segoe UI", Arial, sans-serif`
+    : `${primary}, "Segoe UI", Arial, sans-serif`;
+}
+
+function renderElement(element, index = 0, allowSelection = true) {
+  const node = document.createElement("div");
+  node.className = `slide-object ${element.type === "text" ? "text-object" : ""}`;
+  if (allowSelection && selectedObject && selectedObject.slideIndex === selected && selectedObject.elementIndex === index) {
+    node.classList.add("selected-object");
+  }
+  node.dataset.object = "true";
+  node.dataset.objectType = element.type;
+  node.dataset.elementIndex = String(index);
+  if (element.chartId) node.dataset.chartId = element.chartId;
+  Object.assign(node.style, {
+    left: `${element.x}px`,
+    top: `${element.y}px`,
+    width: `${element.w}px`,
+    height: `${element.h}px`
+  });
+  if (element.type === "text") {
+    node.textContent = element.text || "";
+    Object.assign(node.style, {
+      color: element.fill,
+      fontSize: `${element.size}px`,
+      fontWeight: element.bold ? "800" : "500",
+      lineHeight: element.lineHeight || 1.1,
+      textAlign: element.align || (element.rtl ? "right" : "left"),
+      direction: element.rtl ? "rtl" : "ltr",
+      fontFamily: fontStackForElement(element),
+      letterSpacing: "0"
+    });
+  } else if (element.type === "image") {
+    Object.assign(node.style, {
+      background: element.fill || "#111111",
+      border: `1px solid ${element.stroke || "transparent"}`,
+      borderRadius: `${element.radius || 0}px`,
+      overflow: "hidden"
+    });
+    const image = document.createElement("img");
+    image.src = element.src || "";
+    image.alt = element.alt || "";
+    Object.assign(image.style, {
+      width: "100%",
+      height: "100%",
+      objectFit: element.fit || "cover",
+      display: "block",
+      pointerEvents: "none"
+    });
+    node.appendChild(image);
+  } else {
+    Object.assign(node.style, {
+      background: element.fill,
+      border: `1px solid ${element.stroke || element.fill}`,
+      borderRadius: `${element.radius || 0}px`
+    });
+  }
+  return node;
+}
+
+function renderSlideInto(container, slide, allowSelection = true) {
+  container.innerHTML = "";
+  slide.elements.forEach((element, index) => container.appendChild(renderElement(element, index, allowSelection)));
+}
+
+function scaleCanvas() {
+  const shell = $("previewShell");
+  const canvas = $("slideCanvas");
+  const scale = shell.clientWidth / W;
+  canvas.style.transform = `scale(${scale})`;
+}
+
+function scalePresenter() {
+  const stage = $("presenterStage");
+  const canvas = $("presenterCanvas");
+  if (!stage || !canvas) return;
+  const scale = Math.min(stage.clientWidth / W, stage.clientHeight / H);
+  canvas.style.transform = `scale(${scale})`;
+}
+
+function renderPresenter() {
+  if (!deck) return;
+  presenterIndex = Math.max(0, Math.min(presenterIndex, deck.slides.length - 1));
+  const slide = deck.slides[presenterIndex];
+  $("presenterTitle").textContent = deck.metadata.title;
+  $("presenterSlideTitle").textContent = `${presenterIndex + 1}. ${slide.title || slide.layout}`;
+  $("presenterNotes").textContent = slide.speakerNotes || slide.brief || "";
+  $("presenterCount").textContent = `${presenterIndex + 1} / ${deck.slides.length}`;
+  renderSlideInto($("presenterCanvas"), slide, false);
+  scalePresenter();
+}
+
+function openPresenter() {
+  if (!deck) return;
+  presenterIndex = selected;
+  $("presenterOverlay").classList.add("active");
+  $("presenterOverlay").setAttribute("aria-hidden", "false");
+  renderPresenter();
+}
+
+function closePresenter() {
+  $("presenterOverlay").classList.remove("active");
+  $("presenterOverlay").setAttribute("aria-hidden", "true");
+}
+
+function movePresenter(delta) {
+  if (!$("presenterOverlay").classList.contains("active")) return;
+  presenterIndex = Math.max(0, Math.min(deck.slides.length - 1, presenterIndex + delta));
+  renderPresenter();
+}
+
+function titleElement(slide) {
+  return slide.elements.find((element) => element.type === "text" && element.text === slide.title)
+    || slide.elements.find((element) => element.type === "text" && element.bold && element.size >= 44);
+}
+
+function buildStoryboard() {
+  return deck.slides.map((slide, index) => ({
+    slide: index + 1,
+    id: slide.id,
+    filename: slide.filename,
+    layout: slide.layout,
+    title: slide.title || slide.layout,
+    brief: slide.brief || "",
+    speakerNotes: slide.speakerNotes || "",
+    qaFocus: slide.qaFocus || ""
+  }));
+}
+
+function syncStoryboardState() {
+  deck.playlist = deck.slides.map((slide) => slide.filename);
+  deck.storyboard = buildStoryboard();
+  deck.plan = deck.storyboard.map((item) => ({
+    slide: item.slide,
+    layout: item.layout,
+    role: item.layout === "cover" ? "opening" : item.layout === "closing" || item.layout === "next-steps" || item.layout === "ask" ? "close" : "body",
+    brief: item.brief,
+    speakerNotes: item.speakerNotes,
+    audience: deck.strategy?.audience || "",
+    qaFocus: item.qaFocus
+  }));
+  deck.metadata.storyboardUpdatedAt = new Date().toISOString();
+}
+
+function setSlideTitle(index, value, shouldRender = true) {
+  const slide = deck.slides[index];
+  const clean = value.trim() || slide.title || `Slide ${index + 1}`;
+  const title = titleElement(slide);
+  slide.title = clean;
+  if (title) title.text = clean;
+  if (index === 0) {
+    deck.metadata.title = clean;
+  }
+  syncStoryboardState();
+  if (!shouldRender) return;
+  runQA(false);
+  updateReview();
+  render();
+}
+
+function setSlideNotes(index, value, shouldRender = true) {
+  const slide = deck.slides[index];
+  slide.speakerNotes = value.trim();
+  syncStoryboardState();
+  if (!shouldRender) return;
+  updateReview();
+  render();
+}
+
+function moveSlide(index, delta) {
+  const target = index + delta;
+  if (target < 0 || target >= deck.slides.length) return;
+  const [slide] = deck.slides.splice(index, 1);
+  deck.slides.splice(target, 0, slide);
+  (deck.variants || []).forEach((variant) => {
+    if (variant.slideIndex === index) variant.slideIndex = target;
+    else if (delta > 0 && variant.slideIndex > index && variant.slideIndex <= target) variant.slideIndex -= 1;
+    else if (delta < 0 && variant.slideIndex < index && variant.slideIndex >= target) variant.slideIndex += 1;
+  });
+  selected = target;
+  selectedObject = null;
+  syncStoryboardState();
+  runQA(false);
+  updateReview();
+  render();
+}
+
+function setOutlineField(index, field, value) {
+  outlineDraft = normalizeOutlineItems(outlineDraft.length ? outlineDraft : deck.outline || []);
+  if (!outlineDraft[index]) return;
+  outlineDraft[index][field] = value.trim();
+}
+
+function moveOutlineItem(index, delta) {
+  outlineDraft = normalizeOutlineItems(outlineDraft.length ? outlineDraft : deck.outline || []);
+  const target = index + delta;
+  if (target < 0 || target >= outlineDraft.length) return;
+  const [item] = outlineDraft.splice(index, 1);
+  outlineDraft.splice(target, 0, item);
+  outlineDraft = normalizeOutlineItems(outlineDraft);
+  renderOutline();
+}
+
+function currentElement() {
+  if (!deck || !selectedObject || selectedObject.slideIndex !== selected) return null;
+  return deck.slides[selected]?.elements?.[selectedObject.elementIndex] || null;
+}
+
+function selectObject(index, showInspector = true) {
+  const slide = deck?.slides?.[selected];
+  if (!slide || !slide.elements[index]) return;
+  selectedObject = { slideIndex: selected, elementIndex: index };
+  if (showInspector) activeTab = "object";
+  render();
+}
+
+function updateObjectField(field, value, shouldRender = true) {
+  const element = currentElement();
+  if (!element) return;
+  if (["x", "y", "w", "h", "size", "radius"].includes(field)) {
+    const maxByField = { x: W, y: H, w: W, h: H, size: 140, radius: 160 };
+    const minByField = { x: 0, y: 0, w: 24, h: 24, size: 10, radius: 0 };
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return;
+    element[field] = Math.max(minByField[field], Math.min(maxByField[field], Math.round(numeric)));
+  } else if (field === "bold") {
+    element.bold = Boolean(value);
+  } else if (field === "align") {
+    element.align = value;
+  } else if (field === "text") {
+    element.text = value;
+    const slide = deck.slides[selected];
+    if (element === titleElement(slide)) {
+      slide.title = value.trim() || slide.title;
+      if (selected === 0) {
+        deck.metadata.title = slide.title;
+        deck.metadata.slug = slugify(slide.title);
+      }
+    }
+  } else {
+    element[field] = value;
+  }
+  syncStoryboardState();
+  if (!shouldRender) return;
+  repairDeckQA(2);
+  updateReview();
+  render();
+}
+
+function addObject(kind) {
+  const slide = deck.slides[selected];
+  const element = kind === "shape"
+    ? el("shape", 1180, 700, 420, 150, { fill: deck.theme.accent, stroke: deck.theme.accent, radius: 18 })
+    : text(deck.theme, 220, 780, 740, 72, "New editable text", 34, deck.theme.ink, { bold: true, align: "left", lineHeight: 1.08 });
+  slide.elements.push(element);
+  selectedObject = { slideIndex: selected, elementIndex: slide.elements.length - 1 };
+  activeTab = "object";
+  repairDeckQA(2);
+  updateReview();
+  render();
+}
+
+function duplicateObject() {
+  const element = currentElement();
+  if (!element) return;
+  const copy = cloneDeck(element);
+  copy.x = Math.min(W - copy.w - 60, copy.x + 54);
+  copy.y = Math.min(H - copy.h - 60, copy.y + 54);
+  deck.slides[selected].elements.push(copy);
+  selectedObject = { slideIndex: selected, elementIndex: deck.slides[selected].elements.length - 1 };
+  repairDeckQA(2);
+  updateReview();
+  render();
+}
+
+function deleteObject() {
+  if (!selectedObject || selectedObject.slideIndex !== selected) return;
+  const slide = deck.slides[selected];
+  if (slide.elements.length <= 1) return;
+  slide.elements.splice(selectedObject.elementIndex, 1);
+  selectedObject = null;
+  repairDeckQA(2);
+  updateReview();
+  render();
+}
+
+function commitObjectInspector() {
+  if (!currentElement()) return;
+  document.querySelectorAll("#objectOutput [data-object-field]").forEach((control) => {
+    const field = control.dataset.objectField;
+    const value = field === "bold" ? control.value === "true" : control.value;
+    updateObjectField(field, value, false);
+  });
+  repairDeckQA(2);
+  updateReview();
+  render();
+}
+
+function renderStrip() {
+  const strip = $("slideStrip");
+  strip.innerHTML = "";
+  deck.slides.forEach((slide, i) => {
+    const btn = document.createElement("button");
+    btn.className = `thumb ${i === selected ? "active" : ""}`;
+    btn.onclick = () => {
+      selected = i;
+      selectedObject = null;
+      render();
+    };
+    const preview = document.createElement("div");
+    preview.className = "thumb-preview";
+    const mini = document.createElement("div");
+    mini.className = "mini";
+    mini.style.width = `${W}px`;
+    mini.style.height = `${H}px`;
+    mini.style.transform = "scale(0.092)";
+    renderSlideInto(mini, slide, false);
+    preview.appendChild(mini);
+    const label = document.createElement("div");
+    label.className = "thumb-title";
+    label.textContent = `${i + 1}. ${slide.title || slide.layout}`;
+    btn.append(preview, label);
+    strip.appendChild(btn);
+  });
+}
+
+function manifest() {
+  const factCheck = deck.factCheck || analyzeFactCheck();
+  const arabicAudit = deck.review?.arabicAudit || analyzeArabicLuxeQuality(deck);
+  return {
+    schemaVersion: deck.schemaVersion,
+    format: deck.format,
+    metadata: deck.metadata,
+    canvas: deck.canvas,
+    theme: deck.theme,
+    brand: deck.brand,
+    template: deck.template || null,
+    evidence: deck.evidence,
+    sources: deck.sources || [],
